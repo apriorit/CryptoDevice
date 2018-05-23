@@ -1,0 +1,86 @@
+;
+; CryptoDevice.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=CryptoDevice.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+CryptoDevice_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+CryptoDevice.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%CryptoDevice.DeviceDesc%=CryptoDevice_Device, Root\CryptoDevice ; TODO: edit hw-id
+
+[CryptoDevice_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+CryptoDevice.sys
+
+;-------------- Service installation
+[CryptoDevice_Device.NT.Services]
+AddService = CryptoDevice,%SPSVCINST_ASSOCSERVICE%, CryptoDevice_Service_Inst
+
+; -------------- CryptoDevice driver install sections
+[CryptoDevice_Service_Inst]
+DisplayName    = %CryptoDevice.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\CryptoDevice.sys
+
+;
+;--- CryptoDevice_Device Coinstaller installation ------
+;
+
+[CryptoDevice_Device.NT.CoInstallers]
+AddReg=CryptoDevice_Device_CoInstaller_AddReg
+CopyFiles=CryptoDevice_Device_CoInstaller_CopyFiles
+
+[CryptoDevice_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[CryptoDevice_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[CryptoDevice_Device.NT.Wdf]
+KmdfService =  CryptoDevice, CryptoDevice_wdfsect
+[CryptoDevice_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "CryptoDevice Installation Disk"
+CryptoDevice.DeviceDesc = "CryptoDevice Device"
+CryptoDevice.SVCDESC = "CryptoDevice Service"

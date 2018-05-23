@@ -1,0 +1,11 @@
+*.user
+*.aps
+*.pyc
+*.sdf
+*.suo
+.vscode
+/bin/
+/lib/
+/obj/
+/src/.vs/
+/src/ipch/
