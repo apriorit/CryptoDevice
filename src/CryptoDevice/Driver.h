@@ -14,13 +14,14 @@ Environment:
 
 --*/
 
-#include <ntddk.h>
+#include <ntifs.h>
 #include <wdf.h>
 #include <initguid.h>
 
-#include "device.h"
-#include "queue.h"
-#include "trace.h"
+#include "Device.h"
+#include "Interrupt.h"
+#include "Queue.h"
+#include "Trace.h"
 
 EXTERN_C_START
 

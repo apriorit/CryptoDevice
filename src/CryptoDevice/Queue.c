@@ -16,13 +16,13 @@ Environment:
 
 #include "driver.h"
 #include "queue.tmh"
+#include "CryptoDeviceLogic.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, CryptoDeviceQueueInitialize)
 #endif
 
-NTSTATUS
-CryptoDeviceQueueInitialize(
+NTSTATUS CryptoDeviceQueueInitialize(
     _In_ WDFDEVICE Device
     )
 /*++
@@ -72,7 +72,8 @@ Return Value:
                  &queue
                  );
 
-    if(!NT_SUCCESS(status)) {
+    if(!NT_SUCCESS(status))
+    {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
         return status;
     }
@@ -80,8 +81,7 @@ Return Value:
     return status;
 }
 
-VOID
-CryptoDeviceEvtIoDeviceControl(
+VOID CryptoDeviceEvtIoDeviceControl(
     _In_ WDFQUEUE Queue,
     _In_ WDFREQUEST Request,
     _In_ size_t OutputBufferLength,
@@ -113,18 +113,82 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "%!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d", 
-                Queue, Request, (int) OutputBufferLength, (int) InputBufferLength, IoControlCode);
+    if (KeGetCurrentIrql() != PASSIVE_LEVEL)
+    {
+        //
+        // We can process IOCTLs only on PASSIVE LEVEL
+        //
+        WdfRequestCompleteWithInformation(Request, STATUS_NOT_IMPLEMENTED, 0);
+        return;
+    }
 
-    WdfRequestComplete(Request, STATUS_SUCCESS);
+    WDFDEVICE device = WdfIoQueueGetDevice(Queue);
+    PDEVICE_CONTEXT ctx = DeviceGetContext(device);
+    size_t bytesReturned = 0;
+    NTSTATUS status = STATUS_INVALID_DEVICE_REQUEST;
 
-    return;
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_QUEUE,
+        "%!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d",
+        Queue, Request, (int)OutputBufferLength, (int)InputBufferLength, IoControlCode);
+
+    switch (IoControlCode)
+    {
+    case IOCTL_CRYPTO_DEVICE_RESET:
+    {
+        status = CryptoDeviceResetRequest(&ctx->CryptoDevice);
+        break;
+    }
+
+    case IOCTL_CRYPTO_DEVICE_GET_STATUS:
+    {
+        CryptoDeviceStatus * staus = NULL;
+        bytesReturned = sizeof(*staus);
+        NT_CHECK_BREAK(WdfRequestRetrieveOutputBuffer(Request, sizeof(*staus), &staus, NULL));
+
+        DEVICE_STATE state = { 0 };
+        NT_CHECK_BREAK(CryptoDeviceStateRequest(&ctx->CryptoDevice, &state));
+
+        staus->ErrorCode = state.Error;
+        staus->State = state.State;
+        break;
+    }
+
+    case IOCTL_CRYPTO_DEVICE_AES_CBC:
+    {
+        CryptoDeviceBufferInOut * buf = NULL;
+        NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
+
+        // TODO : validate pointers
+
+        status = CryptoDeviceAesCbcRequest(&ctx->CryptoDevice,
+            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
+            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+        break;
+    }
+
+    case IOCTL_CRYPTO_DEVICE_SHA256:
+    {
+        CryptoDeviceBufferInOut * buf = NULL;
+        NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
+
+        // TODO : validate pointers
+
+        status = CryptoDeviceSha2CbcRequest(&ctx->CryptoDevice,
+            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
+            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+        break;
+    }
+
+    default:
+        status = STATUS_INVALID_DEVICE_REQUEST;
+        break;
+    }
+
+    WdfRequestCompleteWithInformation(Request, status, bytesReturned);
 }
 
-VOID
-CryptoDeviceEvtIoStop(
+VOID CryptoDeviceEvtIoStop(
     _In_ WDFQUEUE Queue,
     _In_ WDFREQUEST Request,
     _In_ ULONG ActionFlags

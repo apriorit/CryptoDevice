@@ -1,0 +1,25 @@
+#pragma once
+
+EXTERN_C_START
+
+typedef struct _DEVICE_INTERRUPT_CONTEXT
+{
+    MSI_FLAGS Msi;
+
+} DEVICE_INTERRUPT_CONTEXT, *PDEVICE_INTERRUPT_CONTEXT;
+
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_INTERRUPT_CONTEXT, GetInterruptContext)
+
+NTSTATUS CryptoDeviceInterruptCreate(
+    _In_    WDFDEVICE Device,
+    _In_    PCM_PARTIAL_RESOURCE_DESCRIPTOR InterruptTranslated,
+    _In_    PCM_PARTIAL_RESOURCE_DESCRIPTOR InterruptRaw,
+    _Inout_ WDFINTERRUPT *Interrupt
+);
+
+EVT_WDF_INTERRUPT_ISR CryptoDeviceEvtInterruptIsr;
+EVT_WDF_INTERRUPT_DPC CryptoDeviceEvtInterruptDpc;
+EVT_WDF_INTERRUPT_ENABLE CryptoDeviceEvtInterruptEnable;
+EVT_WDF_INTERRUPT_DISABLE CryptoDeviceEvtInterruptDisable;
+
+EXTERN_C_END

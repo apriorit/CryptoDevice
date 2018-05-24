@@ -20,11 +20,9 @@ Environment:
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
 #pragma alloc_text (PAGE, CryptoDeviceEvtDeviceAdd)
-#pragma alloc_text (PAGE, CryptoDeviceEvtDriverContextCleanup)
 #endif
 
-NTSTATUS
-DriverEntry(
+NTSTATUS DriverEntry(
     _In_ PDRIVER_OBJECT  DriverObject,
     _In_ PUNICODE_STRING RegistryPath
     )
@@ -83,7 +81,8 @@ Return Value:
                              WDF_NO_HANDLE
                              );
 
-    if (!NT_SUCCESS(status)) {
+    if (!NT_SUCCESS(status)) 
+    {
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
         WPP_CLEANUP(DriverObject);
         return status;
@@ -94,8 +93,7 @@ Return Value:
     return status;
 }
 
-NTSTATUS
-CryptoDeviceEvtDeviceAdd(
+NTSTATUS CryptoDeviceEvtDeviceAdd(
     _In_    WDFDRIVER       Driver,
     _Inout_ PWDFDEVICE_INIT DeviceInit
     )
@@ -133,8 +131,7 @@ Return Value:
     return status;
 }
 
-VOID
-CryptoDeviceEvtDriverContextCleanup(
+VOID CryptoDeviceEvtDriverContextCleanup(
     _In_ WDFOBJECT DriverObject
     )
 /*++
@@ -153,8 +150,6 @@ Return Value:
 --*/
 {
     UNREFERENCED_PARAMETER(DriverObject);
-
-    PAGED_CODE();
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 
