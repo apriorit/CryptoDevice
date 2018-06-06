@@ -5,6 +5,13 @@ VisualStudioVersion = 15.0.27428.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CryptoDevice", "CryptoDevice\CryptoDevice.vcxproj", "{C9BD6BF8-DC85-490C-A0DC-419C0DF7048B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CryptoDeviceUserLib", "CryptoDeviceUserLib\CryptoDeviceUserLib.vcxproj", "{FD851E0D-0762-4AF9-BF74-590817FA3F28}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CryptoDeviceTest", "CryptoDeviceTest\CryptoDeviceTest.vcxproj", "{8B550960-5261-4CFF-B5A8-759BEE5D3A5B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FD851E0D-0762-4AF9-BF74-590817FA3F28} = {FD851E0D-0762-4AF9-BF74-590817FA3F28}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -17,6 +24,14 @@ Global
 		{C9BD6BF8-DC85-490C-A0DC-419C0DF7048B}.Release|x64.ActiveCfg = Release|x64
 		{C9BD6BF8-DC85-490C-A0DC-419C0DF7048B}.Release|x64.Build.0 = Release|x64
 		{C9BD6BF8-DC85-490C-A0DC-419C0DF7048B}.Release|x64.Deploy.0 = Release|x64
+		{FD851E0D-0762-4AF9-BF74-590817FA3F28}.Debug|x64.ActiveCfg = Debug|x64
+		{FD851E0D-0762-4AF9-BF74-590817FA3F28}.Debug|x64.Build.0 = Debug|x64
+		{FD851E0D-0762-4AF9-BF74-590817FA3F28}.Release|x64.ActiveCfg = Release|x64
+		{FD851E0D-0762-4AF9-BF74-590817FA3F28}.Release|x64.Build.0 = Release|x64
+		{8B550960-5261-4CFF-B5A8-759BEE5D3A5B}.Debug|x64.ActiveCfg = Debug|x64
+		{8B550960-5261-4CFF-B5A8-759BEE5D3A5B}.Debug|x64.Build.0 = Debug|x64
+		{8B550960-5261-4CFF-B5A8-759BEE5D3A5B}.Release|x64.ActiveCfg = Release|x64
+		{8B550960-5261-4CFF-B5A8-759BEE5D3A5B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
