@@ -14,7 +14,15 @@ NTSTATUS CryptoDeviceResetRequest(
     _In_ PCRYPTO_DEVICE Device
 );
 
-NTSTATUS CryptoDeviceAesCbcRequest(
+NTSTATUS CryptoDeviceAesCbcEncryptRequest(
+    _In_ PCRYPTO_DEVICE Device,
+    _In_ PVOID UserBufferIn,
+    _In_ ULONG UserBufferInSize,
+    _In_ PVOID UserBufferOut,
+    _In_ ULONG UserBufferOutSize
+);
+
+NTSTATUS CryptoDeviceAesCbcDecryptRequest(
     _In_ PCRYPTO_DEVICE Device,
     _In_ PVOID UserBufferIn,
     _In_ ULONG UserBufferInSize,

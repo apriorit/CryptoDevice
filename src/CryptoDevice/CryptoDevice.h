@@ -13,10 +13,12 @@ typedef struct _MSI_FLAGS
 typedef struct _CRYPTO_DEVICE
 {
     CryptoDeviceIo * Io;
-    WDFWAITLOCK IoLock;
+
+    WDFWAITLOCK OperationLock;
 
     KEVENT ErrorEvent;
     KEVENT ReadyEvent;
+    KEVENT ResetEvent;
 
 } CRYPTO_DEVICE, *PCRYPTO_DEVICE;
 

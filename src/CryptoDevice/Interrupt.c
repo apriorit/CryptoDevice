@@ -104,7 +104,7 @@ NTSTATUS CryptoDeviceEvtInterruptEnable(
 )
 {
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_INTERRUPT,
-        "VarjoEvtInterruptEnable: Interrupt 0x%p, Device 0x%p\n",
+        "CryptoDeviceEvtInterruptEnable: Interrupt 0x%p, Device 0x%p\n",
         Interrupt, Device);
     return STATUS_SUCCESS;
 }
@@ -115,7 +115,7 @@ NTSTATUS CryptoDeviceEvtInterruptDisable(
 )
 {
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_INTERRUPT,
-        "VarjoEvtInterruptDisable: Interrupt 0x%p, Device 0x%p\n",
+        "CryptoDeviceEvtInterruptDisable: Interrupt 0x%p, Device 0x%p\n",
         Interrupt, Device);
     return STATUS_SUCCESS;
 }

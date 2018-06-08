@@ -3,9 +3,13 @@
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, CryptoDeviceResetRequest)
-#pragma alloc_text (PAGE, CryptoDeviceAesCbcRequest)
+#pragma alloc_text (PAGE, CryptoDeviceAesCbcEncryptRequest)
+#pragma alloc_text (PAGE, CryptoDeviceAesCbcDecryptRequest)
 #pragma alloc_text (PAGE, CryptoDeviceSha2CbcRequest)
+#pragma alloc_text (PAGE, CryptoDeviceStateRequest)
 #endif
+
+// TODO: SYNC
 
 NTSTATUS CryptoDeviceResetRequest(
     _In_ PCRYPTO_DEVICE Device
@@ -56,7 +60,7 @@ clean:
     return status;
 }
 
-NTSTATUS CryptoDeviceAesCbcRequest(
+NTSTATUS CryptoDeviceAesCbcEncryptRequest(
     _In_ PCRYPTO_DEVICE Device,
     _In_ PVOID UserBufferIn,
     _In_ ULONG UserBufferInSize,
@@ -66,15 +70,32 @@ NTSTATUS CryptoDeviceAesCbcRequest(
 {
     PAGED_CODE();
 
-    NT_CHECK(CryptoDeviceResetRequest(Device));
-    NT_CHECK(CryptoDeviceCommandRequestInOut(
+    return CryptoDeviceCommandRequestInOut(
         Device,
         UserBufferIn,
         UserBufferInSize,
         UserBufferOut,
         UserBufferOutSize,
-        CryptoDevice_AesCbcCommand));
-    return STATUS_SUCCESS;
+        CryptoDevice_AesEncryptCbcCommand);
+}
+
+NTSTATUS CryptoDeviceAesCbcDecryptRequest(
+    _In_ PCRYPTO_DEVICE Device,
+    _In_ PVOID UserBufferIn,
+    _In_ ULONG UserBufferInSize,
+    _In_ PVOID UserBufferOut,
+    _In_ ULONG UserBufferOutSize
+)
+{
+    PAGED_CODE();
+
+    return CryptoDeviceCommandRequestInOut(
+        Device,
+        UserBufferIn,
+        UserBufferInSize,
+        UserBufferOut,
+        UserBufferOutSize,
+        CryptoDevice_AesDecryptCbcCommand);
 }
 
 NTSTATUS CryptoDeviceSha2CbcRequest(
@@ -87,15 +108,13 @@ NTSTATUS CryptoDeviceSha2CbcRequest(
 {
     PAGED_CODE();
 
-    NT_CHECK(CryptoDeviceResetRequest(Device));
-    NT_CHECK(CryptoDeviceCommandRequestInOut(
+    return CryptoDeviceCommandRequestInOut(
         Device,
         UserBufferIn,
         UserBufferInSize,
         UserBufferOut,
         UserBufferOutSize,
-        CryptoDevice_Sha2Command));
-    return STATUS_SUCCESS;
+        CryptoDevice_Sha2Command);
 }
 
 NTSTATUS CryptoDeviceStateRequest(
@@ -103,7 +122,11 @@ NTSTATUS CryptoDeviceStateRequest(
     _Out_ PDEVICE_STATE State
 )
 {
+    PAGED_CODE();
+
+    WdfWaitLockAcquire(Device->OperationLock, NULL);
     State->State = CryptoDeviceGetState(Device);
     State->Error = CryptoDeviceGetErrorCode(Device);
+    WdfWaitLockRelease(Device->OperationLock);
     return STATUS_SUCCESS;
 }

@@ -154,14 +154,27 @@ Return Value:
         break;
     }
 
-    case IOCTL_CRYPTO_DEVICE_AES_CBC:
+    case IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT:
     {
         CryptoDeviceBufferInOut * buf = NULL;
         NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
 
         // TODO : validate pointers
 
-        status = CryptoDeviceAesCbcRequest(&ctx->CryptoDevice,
+        status = CryptoDeviceAesCbcEncryptRequest(&ctx->CryptoDevice,
+            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
+            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+        break;
+    }
+
+    case IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT:
+    {
+        CryptoDeviceBufferInOut * buf = NULL;
+        NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
+
+        // TODO : validate pointers
+
+        status = CryptoDeviceAesCbcDecryptRequest(&ctx->CryptoDevice,
             (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
             (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
         break;

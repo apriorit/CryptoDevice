@@ -29,10 +29,11 @@ typedef enum tagCryptoDeviceState
 
 typedef enum tagCryptoDeviceCommand
 {
-    CryptoDevice_IdleCommand    = 0x00,
-    CryptoDevice_ResetCommand   = 0x01,
-    CryptoDevice_AesCbcCommand  = 0x02,
-    CryptoDevice_Sha2Command    = 0x03
+    CryptoDevice_IdleCommand            = 0x00,
+    CryptoDevice_ResetCommand           = 0x01,
+    CryptoDevice_AesEncryptCbcCommand   = 0x02,
+    CryptoDevice_AesDecryptCbcCommand   = 0x03,
+    CryptoDevice_Sha2Command            = 0x04
 
 } CryptoDeviceCommand;
 
@@ -48,6 +49,7 @@ typedef enum tagCryptoDeviceMSI
     CryptoDevice_MsiZero   = 0x00,
     CryptoDevice_MsiError  = 0x01,
     CryptoDevice_MsiReady  = 0x02,
+    CryptoDevice_MsiReset  = 0x03,
     CryptoDevice_MsiMax    = 0x04
 
 } CryptoDeviceMSI;
@@ -64,7 +66,8 @@ typedef struct tagCryptoDeviceIo
     /*0x10*/ uint32_t DmaCountOut;
     /*0x14*/ uint8_t  MsiErrorFlag;
     /*0x15*/ uint8_t  MsiReadyFlag;
-    /*0x16*/ uint16_t Unused;
+    /*0x16*/ uint8_t  MsiResetFlag;
+    /*0x17*/ uint8_t Unused;
     
 } CryptoDeviceIo;
 
@@ -78,6 +81,7 @@ static_assert(0x0C == offsetof(CryptoDeviceIo, DmaCountIn), "Invalid DmaCountIn 
 static_assert(0x10 == offsetof(CryptoDeviceIo, DmaCountOut), "Invalid DmaCountOut offset");
 static_assert(0x14 == offsetof(CryptoDeviceIo, MsiErrorFlag), "Invalid MsiErrorFlag offset");
 static_assert(0x15 == offsetof(CryptoDeviceIo, MsiReadyFlag), "Invalid MsiReadyFlag offset");
-static_assert(0x16 == offsetof(CryptoDeviceIo, Unused), "Invalid Unused offset");
+static_assert(0x16 == offsetof(CryptoDeviceIo, MsiResetFlag), "Invalid MsiResetFlag offset");
+static_assert(0x17 == offsetof(CryptoDeviceIo, Unused), "Invalid Unused offset");
 
 #pragma pack(pop)

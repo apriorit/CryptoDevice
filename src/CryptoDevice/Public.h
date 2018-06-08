@@ -23,8 +23,6 @@ DEFINE_GUID (GUID_DEVINTERFACE_CRYPTO,
     0xd7b78033,0xe888,0x47dc,0x98,0x34,0x88,0x3d,0x89,0x80,0x46,0x80);
 // {d7b78033-e888-47dc-9834-883d89804680}
 
-#define IOCTL_CODE($code, $method) 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //// The user mode interface for communication with the driver
 ////
@@ -67,12 +65,20 @@ typedef struct tagCryptoDeviceBufferInOut
 #define IOCTL_CRYPTO_DEVICE_GET_STATUS CTL_CODE(FILE_DEVICE_UNKNOWN, 801, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 //
-// Encrypt/decrypt buffer with AES CBC 
+// Encrypt buffer with AES CBC 
 //
 // IN:  CryptoDeviceBufferInOut 
 // OUT: None 
 //
-#define IOCTL_CRYPTO_DEVICE_AES_CBC CTL_CODE(FILE_DEVICE_UNKNOWN, 802, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT CTL_CODE(FILE_DEVICE_UNKNOWN, 802, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+//
+// Decrypt buffer with AES CBC 
+//
+// IN:  CryptoDeviceBufferInOut 
+// OUT: None 
+//
+#define IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT CTL_CODE(FILE_DEVICE_UNKNOWN, 803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 //
 // Calculate SHA256 for the buffer
@@ -80,4 +86,4 @@ typedef struct tagCryptoDeviceBufferInOut
 // IN:  CryptoDeviceBufferInOut
 // OUT: None
 //
-#define IOCTL_CRYPTO_DEVICE_SHA256 CTL_CODE(FILE_DEVICE_UNKNOWN, 803, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define IOCTL_CRYPTO_DEVICE_SHA256 CTL_CODE(FILE_DEVICE_UNKNOWN, 804, METHOD_BUFFERED, FILE_ANY_ACCESS)
