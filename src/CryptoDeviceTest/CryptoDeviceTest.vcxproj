@@ -69,6 +69,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)CryptoDeviceUserLib;$(SolutionDir);$(SolutionDir)GoogleTest\googletest\include;$(SolutionDir)GoogleTest\googlemock\include;$(SolutionDir)GoogleTest\googletest\;$(SolutionDir)GSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>6326; 26433; 26439; 26440; 26409; 26426; 26496; 26490; 26481; </DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -89,6 +90,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)CryptoDeviceUserLib;$(SolutionDir);$(SolutionDir)GoogleTest\googletest\include;$(SolutionDir)GoogleTest\googlemock\include;$(SolutionDir)GoogleTest\googletest\;$(SolutionDir)GSL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>6326; 26433; 26439; 26440; 26409; 26426; 26496; 26490; 26481; </DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -102,11 +104,19 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CryptoDevice_AesCbcTest.cpp" />
+    <ClCompile Include="CryptoDevice_IoctlTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="CryptoDevice_Sha256Test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CryptoDeviceUserLib\CryptoDeviceUserLib.vcxproj">
+      <Project>{fd851e0d-0762-4af9-bf74-590817fa3f28}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
