@@ -12,9 +12,8 @@ namespace
         out.State = gsl::narrow<CryptoDeviceState>(in.State);
     }
 
-    void Pack(void * buffer, size_t size, CryptoDeviceBuffer& out)
+    void Pack(const void * buffer, size_t size, CryptoDeviceBuffer& out)
     {
-        THROW_IF(!buffer, "The buffer is null");
         out.Address = reinterpret_cast<ULONG_PTR>(buffer);
         out.Size = gsl::narrow<UINT32>(size);
     }
@@ -46,32 +45,54 @@ namespace crypto
         return result;
     }
 
-    void CryptoDeviceCtrl::AesCbcEncrypt(void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize) const
+    void CryptoDeviceCtrl::AesCbcEncrypt(const void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize) const
     {
         AesCbcImpl(bufferIn, bufferInSize, bufferOut, bufferOutSize, IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT);
     }
 
-    void CryptoDeviceCtrl::AesCbcDecrypt(void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize) const
+    void CryptoDeviceCtrl::AesCbcDecrypt(const void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize) const
     {
         AesCbcImpl(bufferIn, bufferInSize, bufferOut, bufferOutSize, IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT);
     }
 
-    std::vector<uint8_t> CryptoDeviceCtrl::Sha256(void * buffer, size_t bufferSize) const
+    std::vector<uint8_t> CryptoDeviceCtrl::Sha256(const void * buffer, size_t bufferSize) const
     {
-        utils::VirtualAllocGuard sha256Buf = VirtualAlloc(NULL, SHA256_SIZE, MEM_COMMIT, PAGE_READWRITE);
+        Sha256Buffer hash { 0 };
+        Sha256(buffer, bufferSize, hash);
+        return std::vector<uint8_t>(hash.begin(), hash.end());
+    }
+
+    void CryptoDeviceCtrl::Sha256(const void * buffer, size_t bufferSize, Sha256Buffer& hash) const
+    {
+        utils::VirtualAllocGuard sha256Buf = VirtualAlloc(NULL, Sha256Size, MEM_COMMIT, PAGE_READWRITE);
         THROW_WIN_IF(!sha256Buf, "Cannot allocate memory for SHA256");
 
         CryptoDeviceBufferInOut buf = {};
         Pack(buffer, bufferSize, buf.In);
-        Pack(sha256Buf.get(), SHA256_SIZE, buf.Out);
+        Pack(sha256Buf.get(), Sha256Size, buf.Out);
 
         m_device.SendIOCTL(IOCTL_CRYPTO_DEVICE_SHA256, &buf, sizeof(buf));
-
-        const auto sha256Data = static_cast<uint8_t*>(sha256Buf.get());
-        return std::vector<uint8_t>(sha256Data, sha256Data + SHA256_SIZE);
+        memcpy(hash.data(), sha256Buf.get(), hash.size());
     }
 
-    void CryptoDeviceCtrl::AesCbcImpl(void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize, DWORD ioctl) const
+    std::vector<std::wstring> CryptoDeviceCtrl::GetDevicesIds()
+    {
+        return utils::GetDevicePath(GUID_DEVINTERFACE_CRYPTO);
+    }
+
+    size_t CryptoDeviceCtrl::GetAesOutBufferSize(size_t inBufferSize)
+    {
+        const size_t tail = inBufferSize % AesBlockSize;
+
+        if (0 == tail)
+        {
+            return inBufferSize;
+        }
+
+        return inBufferSize + (AesBlockSize - tail);
+    }
+
+    void CryptoDeviceCtrl::AesCbcImpl(const void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize, DWORD ioctl) const
     {
         CryptoDeviceBufferInOut buf = {};
         Pack(bufferIn, bufferInSize, buf.In);
