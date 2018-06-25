@@ -73,4 +73,22 @@ namespace utils
 
         return devices;
     }
+
+    uint64_t GetFileSize(const wchar_t* fileName)
+    {
+        HandleFileGuard file = CreateFile(fileName
+            , GENERIC_READ
+            , 0
+            , NULL
+            , OPEN_EXISTING
+            , FILE_READ_ATTRIBUTES
+            , NULL);
+        THROW_WIN_IF(!file, "Cannot open file " << Utf16To8(fileName));
+
+        LARGE_INTEGER size = { 0 };
+        const BOOL res = GetFileSizeEx(file, &size);
+        THROW_WIN_IF(!res, "Cannot get size of file " << Utf16To8(fileName));
+
+        return static_cast<uint64_t>(size.QuadPart);
+    }
 }

@@ -103,6 +103,8 @@
     <ClInclude Include="CryptoDeviceStruct.h" />
     <ClInclude Include="DriverCtrl.h" />
     <ClInclude Include="Exceptions.h" />
+    <ClInclude Include="HashSha256.h" />
+    <ClInclude Include="MappedFile.h" />
     <ClInclude Include="ScopedHandle.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -111,6 +113,8 @@
   <ItemGroup>
     <ClCompile Include="CryptoDeviceCtrl.cpp" />
     <ClCompile Include="DriverCtrl.cpp" />
+    <ClCompile Include="HashSha256.cpp" />
+    <ClCompile Include="MappedFile.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
