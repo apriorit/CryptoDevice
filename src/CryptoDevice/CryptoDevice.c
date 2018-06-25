@@ -3,6 +3,7 @@
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, CryptoDeviceInit)
 #pragma alloc_text (PAGE, CryptoDeviceWaitForReadyOrError)
+#pragma alloc_text (PAGE, CryptoDeviceWaitReset)
 #endif
 
 
@@ -16,13 +17,16 @@ NTSTATUS CryptoDeviceInit(
     ASSERT(CryptoDeviceIo);
     ASSERT(!CryptoDevice->Io);
 
-    NT_CHECK(WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &CryptoDevice->OperationLock));
-
+    NT_CHECK(WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &CryptoDevice->IoLock));
+    NT_CHECK(WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &CryptoDevice->ResetLock));
+    
     CryptoDevice->Io = CryptoDeviceIo;
+    CryptoDevice->DeviceBusy = 0;
 
     KeInitializeEvent(&CryptoDevice->ErrorEvent, NotificationEvent, FALSE);
     KeInitializeEvent(&CryptoDevice->ReadyEvent, NotificationEvent, FALSE);
     KeInitializeEvent(&CryptoDevice->ResetEvent, NotificationEvent, FALSE);
+    KeInitializeEvent(&CryptoDevice->CancelEvent, NotificationEvent, FALSE);
 
     return STATUS_SUCCESS;
 }
@@ -49,26 +53,27 @@ CryptoDeviceErrorCode CryptoDeviceGetErrorCode(
     return (CryptoDeviceErrorCode)READ_REGISTER_UCHAR(&Device->Io->ErrorCode);
 }
 
-NTSTATUS CryptoDeviceDoCommand(
+VOID CryptoDeviceSetCommand(
     _In_ PCRYPTO_DEVICE Device,
     _In_ CryptoDeviceCommand Command
 )
 {
-    ASSERT(CryptoDevice_ResetCommand == Command
-        || CryptoDevice_AesEncryptCbcCommand == Command
-        || CryptoDevice_AesDecryptCbcCommand == Command
+    ASSERT(CryptoDevice_AesCbcEncryptCommand == Command
+        || CryptoDevice_AesCbcDecryptCommand == Command
         || CryptoDevice_Sha2Command == Command);
 
-    if (READ_REGISTER_UCHAR(&Device->Io->State) == CryptoDevice_ReadyState)
-    {
-        KeClearEvent(&Device->ErrorEvent);
-        KeClearEvent(&Device->ReadyEvent);
-        KeClearEvent(&Device->ResetEvent);
-        WRITE_REGISTER_UCHAR(&Device->Io->Command, (UINT8)Command);
-        return STATUS_SUCCESS;
-    }
+    KeClearEvent(&Device->ErrorEvent);
+    KeClearEvent(&Device->ReadyEvent);
+    KeClearEvent(&Device->CancelEvent);
+    WRITE_REGISTER_UCHAR(&Device->Io->Command, (UINT8)Command);
+}
 
-    return STATUS_DEVICE_BUSY;
+VOID CryptoDeviceReset(
+    _In_ PCRYPTO_DEVICE Device
+)
+{
+    KeClearEvent(&Device->ResetEvent);
+    WRITE_REGISTER_UCHAR(&Device->Io->Command, (UINT8)CryptoDevice_ResetCommand);
 }
 
 VOID CryptoDeviceInterruptEnable(
@@ -140,22 +145,26 @@ VOID CryptoDeviceInterruptHandler(
 
 VOID CryptoDeviceProgramDmaIn(
     _In_ PCRYPTO_DEVICE Device,
-    _In_ ULONG32 DmaAddr,
-    _In_ ULONG32 DmaCountOfPages
+    _In_ ULONG32 DmaAddress,
+    _In_ ULONG32 DmaPagesCount,
+    _In_ ULONG32 DmaSizeInBytes
 )
 {
-    WRITE_REGISTER_ULONG(&Device->Io->DmaBufIn, DmaAddr);
-    WRITE_REGISTER_ULONG(&Device->Io->DmaCountIn, DmaCountOfPages);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaInAddress, DmaAddress);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaInPagesCount, DmaPagesCount);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaInSizeInBytes, DmaSizeInBytes);
 }
 
 VOID CryptoDeviceProgramDmaOut(
     _In_ PCRYPTO_DEVICE Device,
-    _In_ ULONG32 DmaAddr,
-    _In_ ULONG32 DmaCountOfPages
+    _In_ ULONG32 DmaAddress,
+    _In_ ULONG32 DmaPagesCount,
+    _In_ ULONG32 DmaSizeInBytes
 )
 {
-    WRITE_REGISTER_ULONG(&Device->Io->DmaBufOut, DmaAddr);
-    WRITE_REGISTER_ULONG(&Device->Io->DmaCountOut, DmaCountOfPages);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaOutAddress, DmaAddress);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaOutPagesCount, DmaPagesCount);
+    WRITE_REGISTER_ULONG(&Device->Io->DmaOutSizeInBytes, DmaSizeInBytes);
 }
 
 NTSTATUS CryptoDeviceWaitForReadyOrError(
@@ -168,7 +177,7 @@ NTSTATUS CryptoDeviceWaitForReadyOrError(
     PKEVENT events[3] = { 0 };
     events[0] = &Device->ReadyEvent;
     events[1] = &Device->ErrorEvent;
-    events[2] = &Device->ResetEvent;
+    events[2] = &Device->CancelEvent;
 
     NTSTATUS status = KeWaitForMultipleObjects(ARRAYSIZE(events),
         events,
@@ -200,12 +209,38 @@ NTSTATUS CryptoDeviceWaitForReadyOrError(
 
     case STATUS_WAIT_2:
         //
-        // Reset event
+        // Cancel event
         //
-        ASSERT(READ_REGISTER_UCHAR(&Device->Io->ErrorCode) == CryptoDevice_NoError);
-        ASSERT(READ_REGISTER_UCHAR(&Device->Io->State) == CryptoDevice_ReadyState);
-        ASSERT(KeReadStateEvent(&Device->ResetEvent) == 0);
+        ASSERT(KeReadStateEvent(&Device->CancelEvent) == 0);
         return STATUS_CANCELLED;
+
+    case STATUS_TIMEOUT:
+
+        return STATUS_DEVICE_BUSY;
+    }
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+NTSTATUS CryptoDeviceWaitReset(
+    _In_ PCRYPTO_DEVICE Device
+)
+{
+    PAGED_CODE();
+
+    LARGE_INTEGER timeout = { 0 };
+    timeout.QuadPart = WDF_REL_TIMEOUT_IN_MS(CRYPTO_DEVICE_RESET_TIMEOUT_MS);
+
+    NTSTATUS status = KeWaitForSingleObject(&Device->ResetEvent,
+        Executive,
+        KernelMode,
+        FALSE,
+        &timeout);
+
+    switch (status)
+    {
+    case STATUS_WAIT_0:
+        return STATUS_SUCCESS;
 
     case STATUS_TIMEOUT:
 

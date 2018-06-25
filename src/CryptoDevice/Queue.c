@@ -58,7 +58,7 @@ Return Value:
     // other queues get dispatched here.
     //
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(
-         &queueConfig,
+        &queueConfig,
         WdfIoQueueDispatchParallel
         );
 
@@ -79,6 +79,45 @@ Return Value:
     }
 
     return status;
+}
+
+__inline PVOID Ulong64ToPtr(ULONG64 h)
+{
+    return (PVOID)((UINT_PTR)h);
+}
+
+static NTSTATUS CheckUserBuffer(PVOID Address, ULONG Lenght)
+{
+    PVOID end = (PCHAR)Address + Lenght;
+
+    if (!Address || 0 == Lenght)
+    {
+        return STATUS_INVALID_USER_BUFFER;
+    }
+
+    if (Address >= end)
+    {
+        return STATUS_INVALID_USER_BUFFER;
+    }
+
+    if (Address >= MmHighestUserAddress || end >= MmHighestUserAddress)
+    {
+        return STATUS_INVALID_USER_BUFFER;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS CheckDeviceBuffer(const CryptoDeviceBuffer* Buffer)
+{
+    return CheckUserBuffer(Ulong64ToPtr(Buffer->Address), Buffer->Size);
+}
+
+static NTSTATUS CehckDeviceBufferInOut(const CryptoDeviceBufferInOut* Buffer)
+{
+    NT_CHECK(CheckDeviceBuffer(&Buffer->In));
+    NT_CHECK(CheckDeviceBuffer(&Buffer->Out));
+    return STATUS_SUCCESS;
 }
 
 VOID CryptoDeviceEvtIoDeviceControl(
@@ -142,15 +181,16 @@ Return Value:
 
     case IOCTL_CRYPTO_DEVICE_GET_STATUS:
     {
-        CryptoDeviceStatus * staus = NULL;
-        bytesReturned = sizeof(*staus);
-        NT_CHECK_BREAK(WdfRequestRetrieveOutputBuffer(Request, sizeof(*staus), &staus, NULL));
+        CryptoDeviceStatus * st = NULL;
+        bytesReturned = sizeof(*st);
+        NT_CHECK_BREAK(WdfRequestRetrieveOutputBuffer(Request, sizeof(*st), &st, NULL));
 
         DEVICE_STATE state = { 0 };
         NT_CHECK_BREAK(CryptoDeviceStateRequest(&ctx->CryptoDevice, &state));
 
-        staus->ErrorCode = state.Error;
-        staus->State = state.State;
+        st->ErrorCode = state.Error;
+        st->State = state.State;
+        status = STATUS_SUCCESS;
         break;
     }
 
@@ -158,12 +198,11 @@ Return Value:
     {
         CryptoDeviceBufferInOut * buf = NULL;
         NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
-
-        // TODO : validate pointers
+        NT_CHECK_BREAK(CehckDeviceBufferInOut(buf));
 
         status = CryptoDeviceAesCbcEncryptRequest(&ctx->CryptoDevice,
-            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
-            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+            Ulong64ToPtr(buf->In.Address), buf->In.Size,
+            Ulong64ToPtr(buf->Out.Address), buf->Out.Size);
         break;
     }
 
@@ -171,12 +210,11 @@ Return Value:
     {
         CryptoDeviceBufferInOut * buf = NULL;
         NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
-
-        // TODO : validate pointers
+        NT_CHECK_BREAK(CehckDeviceBufferInOut(buf));
 
         status = CryptoDeviceAesCbcDecryptRequest(&ctx->CryptoDevice,
-            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
-            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+            Ulong64ToPtr(buf->In.Address), buf->In.Size,
+            Ulong64ToPtr(buf->Out.Address), buf->Out.Size);
         break;
     }
 
@@ -184,12 +222,11 @@ Return Value:
     {
         CryptoDeviceBufferInOut * buf = NULL;
         NT_CHECK_BREAK(WdfRequestRetrieveInputBuffer(Request, sizeof(*buf), &buf, NULL));
-
-        // TODO : validate pointers
+        NT_CHECK_BREAK(CehckDeviceBufferInOut(buf));
 
         status = CryptoDeviceSha2CbcRequest(&ctx->CryptoDevice,
-            (PVOID)((ULONG_PTR)buf->In.Address), buf->In.Size,
-            (PVOID)((ULONG_PTR)buf->Out.Address), buf->Out.Size);
+            Ulong64ToPtr(buf->In.Address), buf->In.Size,
+            Ulong64ToPtr(buf->Out.Address), buf->Out.Size);
         break;
     }
 

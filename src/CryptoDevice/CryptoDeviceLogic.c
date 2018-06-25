@@ -9,17 +9,36 @@
 #pragma alloc_text (PAGE, CryptoDeviceStateRequest)
 #endif
 
-// TODO: SYNC
-
 NTSTATUS CryptoDeviceResetRequest(
     _In_ PCRYPTO_DEVICE Device
 )
 {
     PAGED_CODE();
 
-    NT_CHECK(CryptoDeviceDoCommand(Device, CryptoDevice_ResetCommand));
-    NT_CHECK(CryptoDeviceWaitForReadyOrError(Device, NULL));
-    return STATUS_SUCCESS;
+    WdfWaitLockAcquire(Device->ResetLock, NULL);
+
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+    WdfWaitLockAcquire(Device->IoLock, NULL);
+
+    if (CryptoDeviceGetState(Device) != CryptoDevice_ResetState)
+    {
+        CryptoDeviceReset(Device);
+        status = STATUS_SUCCESS;
+    }
+    else
+    {
+        status = STATUS_DEVICE_BUSY;
+    }
+
+    WdfWaitLockRelease(Device->IoLock);
+
+    NT_CHECK_GOTO_CLEAN(status);
+    NT_CHECK_GOTO_CLEAN(CryptoDeviceWaitReset(Device));
+    KeSetEvent(&Device->CancelEvent, IO_NO_INCREMENT, FALSE);
+
+clean:
+    WdfWaitLockRelease(Device->ResetLock);
+    return status;
 }
 
 static NTSTATUS CryptoDeviceCommandRequestInOut(
@@ -31,9 +50,13 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
     _In_ CryptoDeviceCommand Command
 )
 {
+    if (0 != InterlockedCompareExchange(&Device->DeviceBusy, 1, 0))
+    {
+        return STATUS_DEVICE_BUSY;
+    }
+
     DMA_USER_MEMORY bufferIn = { 0 };
     DMA_USER_MEMORY bufferOut = { 0 };
-
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
     NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
@@ -48,13 +71,31 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
         IoWriteAccess,
         &bufferOut));
 
-    CryptoDeviceProgramDmaIn(Device, bufferIn.DmaAddress, bufferIn.DmaCountOfPages);
-    CryptoDeviceProgramDmaOut(Device, bufferOut.DmaAddress, bufferOut.DmaCountOfPages);
+    WdfWaitLockAcquire(Device->IoLock, NULL);
 
-    NT_CHECK_GOTO_CLEAN(CryptoDeviceDoCommand(Device, Command));
+    if (CryptoDeviceGetErrorCode(Device) != CryptoDevice_NoError)
+    {
+        status = STATUS_DEVICE_DATA_ERROR;
+    }
+    else if (CryptoDeviceGetState(Device) != CryptoDevice_ReadyState)
+    {
+        status = STATUS_DEVICE_BUSY;
+    }
+    else
+    {
+        CryptoDeviceProgramDmaIn(Device, bufferIn.DmaAddress, bufferIn.DmaCountOfPages, UserBufferInSize);
+        CryptoDeviceProgramDmaOut(Device, bufferOut.DmaAddress, bufferOut.DmaCountOfPages, UserBufferOutSize);
+        CryptoDeviceSetCommand(Device, Command);
+        status = STATUS_SUCCESS;
+    }
+
+    WdfWaitLockRelease(Device->IoLock);
+
+    NT_CHECK_GOTO_CLEAN(status);
     NT_CHECK_GOTO_CLEAN(CryptoDeviceWaitForReadyOrError(Device, NULL));
 
 clean:
+    InterlockedDecrement(&Device->DeviceBusy);
     MemFreeDma(&bufferIn);
     MemFreeDma(&bufferOut);
     return status;
@@ -76,7 +117,7 @@ NTSTATUS CryptoDeviceAesCbcEncryptRequest(
         UserBufferInSize,
         UserBufferOut,
         UserBufferOutSize,
-        CryptoDevice_AesEncryptCbcCommand);
+        CryptoDevice_AesCbcEncryptCommand);
 }
 
 NTSTATUS CryptoDeviceAesCbcDecryptRequest(
@@ -95,7 +136,7 @@ NTSTATUS CryptoDeviceAesCbcDecryptRequest(
         UserBufferInSize,
         UserBufferOut,
         UserBufferOutSize,
-        CryptoDevice_AesDecryptCbcCommand);
+        CryptoDevice_AesCbcDecryptCommand);
 }
 
 NTSTATUS CryptoDeviceSha2CbcRequest(
@@ -124,9 +165,9 @@ NTSTATUS CryptoDeviceStateRequest(
 {
     PAGED_CODE();
 
-    WdfWaitLockAcquire(Device->OperationLock, NULL);
+    WdfWaitLockAcquire(Device->IoLock, NULL);
     State->State = CryptoDeviceGetState(Device);
     State->Error = CryptoDeviceGetErrorCode(Device);
-    WdfWaitLockRelease(Device->OperationLock);
+    WdfWaitLockRelease(Device->IoLock);
     return STATUS_SUCCESS;
 }

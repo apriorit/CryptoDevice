@@ -13,12 +13,15 @@ typedef struct _MSI_FLAGS
 typedef struct _CRYPTO_DEVICE
 {
     CryptoDeviceIo * Io;
-
-    WDFWAITLOCK OperationLock;
+    WDFWAITLOCK IoLock;
+    WDFWAITLOCK ResetLock;
 
     KEVENT ErrorEvent;
     KEVENT ReadyEvent;
     KEVENT ResetEvent;
+    KEVENT CancelEvent;
+
+    volatile LONG DeviceBusy;
 
 } CRYPTO_DEVICE, *PCRYPTO_DEVICE;
 
@@ -39,9 +42,13 @@ CryptoDeviceErrorCode CryptoDeviceGetErrorCode(
     _In_ PCRYPTO_DEVICE Device
 );
 
-NTSTATUS CryptoDeviceDoCommand(
+VOID CryptoDeviceSetCommand(
     _In_ PCRYPTO_DEVICE Device,
     _In_ CryptoDeviceCommand Command
+);
+
+VOID CryptoDeviceReset(
+    _In_ PCRYPTO_DEVICE Device
 );
 
 VOID CryptoDeviceInterruptEnable(
@@ -65,19 +72,25 @@ VOID CryptoDeviceInterruptHandler(
 
 VOID CryptoDeviceProgramDmaIn(
     _In_ PCRYPTO_DEVICE Device,
-    _In_ ULONG32 DmaAddr,
-    _In_ ULONG32 DmaCountOfPages
+    _In_ ULONG32 DmaAddress,
+    _In_ ULONG32 DmaPagesCount,
+    _In_ ULONG32 DmaSizeInBytes
 );
 
 VOID CryptoDeviceProgramDmaOut(
     _In_ PCRYPTO_DEVICE Device,
-    _In_ ULONG32 DmaAddr,
-    _In_ ULONG32 DmaCountOfPages
+    _In_ ULONG32 DmaAddress,
+    _In_ ULONG32 DmaPagesCount,
+    _In_ ULONG32 DmaSizeInBytes
 );
 
 NTSTATUS CryptoDeviceWaitForReadyOrError(
     _In_ PCRYPTO_DEVICE Device,
     _In_opt_ PLARGE_INTEGER Timeout
+);
+
+NTSTATUS CryptoDeviceWaitReset(
+    _In_ PCRYPTO_DEVICE Device
 );
 
 EXTERN_C_END

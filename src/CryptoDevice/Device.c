@@ -76,7 +76,6 @@ Return Value:
 
     WdfDeviceInitSetExclusive(DeviceInit, TRUE);
     WdfDeviceInitSetIoType(DeviceInit, WdfDeviceIoBuffered);
-    WdfDeviceInitSetCharacteristics(DeviceInit, FILE_DEVICE_SECURE_OPEN, TRUE);
 
     WDF_OBJECT_ATTRIBUTES deviceAttributes;
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);

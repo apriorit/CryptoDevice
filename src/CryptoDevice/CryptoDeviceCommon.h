@@ -12,6 +12,8 @@ typedef ULONGLONG uint64_t;
 
 #include "CryptoDeviceProtocol.h"
 
+#define CRYPTO_DEVICE_RESET_TIMEOUT_MS 1000ull
+
 static_assert(CRYPTO_DEVICE_PAGE_SHIFT == PAGE_SHIFT, "Unexpected CRYPTO_DEVICE_PAGE_SHIFT");
 
 #define NT_BREAK() KdBreakPoint()
