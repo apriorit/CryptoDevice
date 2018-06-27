@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "typeinfo": "c",
+        "system_error": "c",
+        "type_traits": "c",
+        "visitor.h": "c",
+        "limits": "c",
+        "algorithm": "c",
+        "vector": "c",
+        "array": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "stdint.h": "c",
+        "hw.h": "c",
+        "osdep.h": "c",
+        "sha.h": "c",
+        "*.tcc": "c",
+        "thread": "c"
+    }
+}

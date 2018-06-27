@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/x86_64-softmmu/qemu-system-x86_64",
+            "args": [
+                "-enable-kvm", 
+                "-m", "4G", 
+                "-cpu", "host",
+                "-smp", "cpus=4,cores=4,threads=1,sockets=1",
+                "-device", "pci-crypto,aes_cbc_256=secret",
+                "-hda", "/home/windows10.x64.img",
+                "-hdb", "/home/disk.img",
+                "-snapshot",
+                //"-net", "nic", "-net", "user",
+                //"-net", "nic,macaddr=52:54:01:23:34:44", "-net", "tap,ifname=tap3",
+                "-device", "e1000,netdev=network0", "-netdev", "tap,id=network0,ifname=tap0,script=no,downscript=no",
+                //"-nographic", 
+                "-vnc", ":1"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "text": "handle SIGUSR1 pass nostop noprint"
+                }
+            ]
+        }
+    ]
+}
