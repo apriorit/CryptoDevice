@@ -1,4 +1,4 @@
-TAP=tap3
+TAP=tap0
 ./qemu/x86_64-softmmu/qemu-system-x86_64 \
 	-enable-kvm \
 	-m 2G \

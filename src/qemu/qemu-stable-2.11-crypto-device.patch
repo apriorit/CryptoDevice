@@ -36,10 +36,10 @@ index 10c88a84b4..c9b3708b1b 100644
  common-obj-y += unimp.o
  common-obj-$(CONFIG_FW_CFG_DMA) += vmcoreinfo.o
 diff --git a/hw/misc/crypto.c b/hw/misc/crypto.c
-index e69de29bb2..fafe4a5d44 100644
+index e69de29bb2..c0bb0bf08e 100644
 --- a/hw/misc/crypto.c
 +++ b/hw/misc/crypto.c
-@@ -0,0 +1,715 @@
+@@ -0,0 +1,721 @@
 +#include <assert.h>
 +#include <openssl/sha.h>
 +#include <openssl/aes.h>
@@ -58,7 +58,7 @@ index e69de29bb2..fafe4a5d44 100644
 +    PRINT("ASSERTION FAILED! (%s) in %s %s:%d\n", #$expr, __ASSERT_FUNCTION, __FILE__, __LINE__); \
 +}
 +
-+static unsigned char CRYPTO_DEVICE_AES_CBC_IV[32] = { 50, 173, 92, 223, 82, 154, 174, 43, 225, 92, 126, 46, 161, 158, 81, 99, 75, 234, 234, 192, 43, 235, 197, 208, 66, 133, 233, 189, 80, 222, 183, 193 }; // 256bit
++static const unsigned char CRYPTO_DEVICE_AES_CBC_IV[32] = { 50, 173, 92, 223, 82, 154, 174, 43, 225, 92, 126, 46, 161, 158, 81, 99, 75, 234, 234, 192, 43, 235, 197, 208, 66, 133, 233, 189, 80, 222, 183, 193 }; // 256bit
 +
 +typedef struct PCICryptoState
 +{
@@ -75,7 +75,6 @@ index e69de29bb2..fafe4a5d44 100644
 +    QemuThread thread;
 +    QemuCond thread_cond;
 +    bool thread_running;
-+    bool check_dma_buffer;
 +
 +} PCICryptoState;
 +
@@ -209,20 +208,6 @@ index e69de29bb2..fafe4a5d44 100644
 +
 +        if (write)
 +        {
-+            if (dev->check_dma_buffer)
-+            {
-+                uint8_t * mem = (uint8_t*)calloc(size_to_rw, sizeof(uint8_t));
-+
-+                cpu_physical_memory_read(phys, mem, size_to_rw);
-+
-+                for (uint32_t k = 0; k < size_to_rw; ++k)
-+                {
-+                    ASSERT(mem[k] == CRYPTO_DEVICE_DMA_MAGIC_BYTE);
-+                }
-+
-+                free(mem);
-+            }
-+
 +            cpu_physical_memory_write(phys, data, size_to_rw);
 +        }
 +        else
@@ -257,12 +242,12 @@ index e69de29bb2..fafe4a5d44 100644
 +static void FillDmaRequest(PCICryptoState * dev, DmaRequest * dma)
 +{
 +    dma->in.page_offset = 0;
-+    dma->in.page_addr = CRYPTO_DEVICE_TO_PHYS(dev->io->DmaBufIn);
-+    dma->in.size = dev->io->DmaSizeIn;
++    dma->in.page_addr = CRYPTO_DEVICE_TO_PHYS(dev->io->DmaInAddress);
++    dma->in.size = dev->io->DmaInSizeInBytes;
 +
 +    dma->out.page_offset = 0;
-+    dma->out.page_addr = CRYPTO_DEVICE_TO_PHYS(dev->io->DmaBufOut);
-+    dma->out.size = dev->io->DmaSizeOut;
++    dma->out.page_addr = CRYPTO_DEVICE_TO_PHYS(dev->io->DmaOutAddress);
++    dma->out.size = dev->io->DmaOutSizeInBytes;
 +}
 +
 +static void DoReset(PCICryptoState * dev)
@@ -270,10 +255,12 @@ index e69de29bb2..fafe4a5d44 100644
 +    dev->io->ErrorCode = CryptoDevice_NoError;
 +    dev->io->State = CryptoDevice_ReadyState;
 +    dev->io->Command = CryptoDevice_IdleCommand;
-+    dev->io->DmaBufIn = 0;
-+    dev->io->DmaBufOut = 0;
-+    dev->io->DmaSizeIn = 0;
-+    dev->io->DmaSizeOut = 0;
++    dev->io->DmaInAddress = 0;
++    dev->io->DmaInPagesCount = 0;
++    dev->io->DmaInSizeInBytes = 0;
++    dev->io->DmaOutAddress = 0;
++    dev->io->DmaOutPagesCount = 0;
++    dev->io->DmaOutSizeInBytes = 0;
 +    raise_reset_int(dev);
 +}
 +
@@ -288,7 +275,7 @@ index e69de29bb2..fafe4a5d44 100644
 +        res = true;
 +    }
 +
-+    qemu_mutex_lock(&dev->io_mutex);
++    qemu_mutex_unlock(&dev->io_mutex);
 +    return res;
 +}
 +
@@ -298,7 +285,12 @@ index e69de29bb2..fafe4a5d44 100644
 +    unsigned char page[CRYPTO_DEVICE_PAGE_SIZE] = {};
 +    SHA256_CTX hash = {};
 +
-+    if (!dma->in.page_addr || !dma->in.size || !dma->out.page_addr || dma->out.size < SHA256_DIGEST_LENGTH)
++    if (!dma->out.page_addr || dma->out.size < SHA256_DIGEST_LENGTH)
++    {
++        return CryptoDevice_DmaError;
++    }
++
++    if (!dma->in.page_addr && dma->in.size != 0)
 +    {
 +        return CryptoDevice_DmaError;
 +    }
@@ -337,14 +329,19 @@ index e69de29bb2..fafe4a5d44 100644
 +    AES_KEY key;
 +    unsigned char in[CRYPTO_DEVICE_PAGE_SIZE] = {};
 +    unsigned char out[CRYPTO_DEVICE_PAGE_SIZE] = {};
++    unsigned char iv[sizeof(CRYPTO_DEVICE_AES_CBC_IV)] = {};
 +    const int key_lenght = sizeof(dev->aes_cbc_key) * 8; 
 +
 +    typedef int (*PAES_set_key)(const unsigned char *userKey, const int bits, AES_KEY *key);
 +    const PAES_set_key AES_set_key = encrypt ? AES_set_encrypt_key : AES_set_decrypt_key;
 +    const int enc = encrypt ? AES_ENCRYPT : AES_DECRYPT;
 +
-+    const size_t out_size = dma->in.size + ((dma->in.size % AES_BLOCK_SIZE) == 0 ? 0 : AES_BLOCK_SIZE);
++    const size_t tail = dma->in.size % AES_BLOCK_SIZE;
++    const size_t out_size = dma->in.size + (tail == 0 ? 0 : AES_BLOCK_SIZE - tail);
 +
++    static_assert(sizeof(iv) == sizeof(CRYPTO_DEVICE_AES_CBC_IV), "Unexpected sizeof iv");
++    memcpy(iv, CRYPTO_DEVICE_AES_CBC_IV, sizeof(iv));
++    
 +    ASSERT(0 == (out_size % AES_BLOCK_SIZE));
 +    static_assert(sizeof(in) % AES_BLOCK_SIZE == 0, "Invalid size of in buffer");
 +
@@ -376,9 +373,9 @@ index e69de29bb2..fafe4a5d44 100644
 +        }
 +
 +        ASSERT(0 == (size % AES_BLOCK_SIZE));
-+        AES_cbc_encrypt(in, out, (unsigned long)size, &key, CRYPTO_DEVICE_AES_CBC_IV, enc);
++        AES_cbc_encrypt(in, out, (unsigned long)size, &key, iv, enc);
 +
-+        if (size != rw_dma_data(dev, true, &dma->out, out, sizeof(out)))
++        if (size != rw_dma_data(dev, true, &dma->out, out, size))
 +        {
 +            return CryptoDevice_DmaError;
 +        }
@@ -431,21 +428,21 @@ index e69de29bb2..fafe4a5d44 100644
 +                
 +            case CryptoDevice_AesCbcEncryptCommand:
 +                dev->io->State = CryptoDevice_AesCbcState;
-+                qemu_mutex_lock(&dev->io_mutex);
++                qemu_mutex_unlock(&dev->io_mutex);
 +                error = DoAesCbc(dev, &dma, true);
 +                qemu_mutex_lock(&dev->io_mutex);
 +                break;
 +
 +            case CryptoDevice_AesCbcDecryptCommand:
 +                dev->io->State = CryptoDevice_AesCbcState;
-+                qemu_mutex_lock(&dev->io_mutex);
++                qemu_mutex_unlock(&dev->io_mutex);
 +                error = DoAesCbc(dev, &dma, false);
 +                qemu_mutex_lock(&dev->io_mutex);
 +                break;
 +
 +            case CryptoDevice_Sha2Command:
 +                dev->io->State = CryptoDevice_Sha2State;
-+                qemu_mutex_lock(&dev->io_mutex);
++                qemu_mutex_unlock(&dev->io_mutex);
 +                error = DoSha256(dev, &dma);
 +                qemu_mutex_lock(&dev->io_mutex);
 +                break;
@@ -574,20 +571,28 @@ index e69de29bb2..fafe4a5d44 100644
 +        dev->io->InterruptFlag = (uint8_t)val;
 +        break;
 +
-+    CASE(DmaBufIn)
-+        dev->io->DmaBufIn = (uint32_t)val;
++    CASE(DmaInAddress)
++        dev->io->DmaInAddress = (uint32_t)val;
 +        break;
 +
-+    CASE(DmaBufOut)
-+        dev->io->DmaBufOut = (uint32_t)val;
++    CASE(DmaInPagesCount)
++        dev->io->DmaInPagesCount = (uint32_t)val;
 +        break;
 +
-+    CASE(DmaSizeIn)
-+        dev->io->DmaSizeIn = (uint32_t)val;
++    CASE(DmaInSizeInBytes)
++        dev->io->DmaInSizeInBytes = (uint32_t)val;
 +        break;
 +
-+    CASE(DmaSizeOut)
-+        dev->io->DmaSizeOut = (uint32_t)val;
++    CASE(DmaOutAddress)
++        dev->io->DmaOutAddress = (uint32_t)val;
++        break;
++
++    CASE(DmaOutPagesCount)
++        dev->io->DmaOutPagesCount = (uint32_t)val;
++        break;
++
++    CASE(DmaOutSizeInBytes)
++        dev->io->DmaOutSizeInBytes = (uint32_t)val;
 +        break;
 +
 +    CASE(MsiErrorFlag)
@@ -645,7 +650,6 @@ index e69de29bb2..fafe4a5d44 100644
 +    }
 +
 +    dev->thread_running = true;
-+    dev->check_dma_buffer = true;
 +    dev->io = (CryptoDeviceIo*)dev->memio_data;
 +    memset(dev->memio_data, 0, sizeof(dev->memio_data));
 +
@@ -686,10 +690,12 @@ index e69de29bb2..fafe4a5d44 100644
 +    dev->io->State = CryptoDevice_ReadyState;
 +    dev->io->Command = CryptoDevice_IdleCommand;
 +    dev->io->InterruptFlag = CryptoDevice_DisableFlag;
-+    dev->io->DmaBufIn = 0;
-+    dev->io->DmaBufOut = 0;
-+    dev->io->DmaSizeIn = 0;
-+    dev->io->DmaSizeOut = 0;
++    dev->io->DmaInAddress = 0;
++    dev->io->DmaInPagesCount = 0;
++    dev->io->DmaInSizeInBytes = 0;
++    dev->io->DmaOutAddress = 0;
++    dev->io->DmaOutPagesCount = 0;
++    dev->io->DmaOutSizeInBytes = 0;
 +    dev->io->MsiErrorFlag = 0;
 +    dev->io->MsiReadyFlag = 0;
 +    dev->io->MsiResetFlag = 0;
