@@ -26,8 +26,8 @@ typedef struct _CRYPTO_DEVICE
 } CRYPTO_DEVICE, *PCRYPTO_DEVICE;
 
 NTSTATUS CryptoDeviceInit(
-    _In_    PVOID          CryptoDeviceIo,
-    _Inout_ PCRYPTO_DEVICE CryptoDevice
+    _Inout_ PCRYPTO_DEVICE CryptoDevice,
+    _In_    PVOID          CryptoDeviceIo
 );
 
 VOID CryptoDeviceRelease(

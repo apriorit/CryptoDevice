@@ -218,7 +218,7 @@ TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_SHA256_OutZeroSize)
 
     size_t size = 0;
     EXPECT_THROW(m_driver->SendIOCTL(IOCTL_CRYPTO_DEVICE_SHA256, &buf, sizeof(buf), nullptr, size), std::exception);
-    EXPECT_EQ(CryptoDevice_NoError, GetDeviceError());
+    EXPECT_NE(CryptoDevice_NoError, GetDeviceError());
 }
 
 TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT_Ok)
@@ -289,7 +289,7 @@ TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT_InZeroSize)
 
     size_t size = 0;
     EXPECT_THROW(m_driver->SendIOCTL(IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT, &buf, sizeof(buf), nullptr, size), std::exception);
-    EXPECT_EQ(CryptoDevice_NoError, GetDeviceError());
+    EXPECT_NE(CryptoDevice_NoError, GetDeviceError());
 }
 
 TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT_OutBadAddr)
@@ -345,7 +345,7 @@ TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT_OutZeroSize)
 
     size_t size = 0;
     EXPECT_THROW(m_driver->SendIOCTL(IOCTL_CRYPTO_DEVICE_AES_CBC_ENCRYPT, &buf, sizeof(buf), nullptr, size), std::exception);
-    EXPECT_EQ(CryptoDevice_NoError, GetDeviceError());
+    EXPECT_NE(CryptoDevice_NoError, GetDeviceError());
 }
 
 TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT_Ok)
@@ -416,7 +416,7 @@ TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT_InZeroSize)
 
     size_t size = 0;
     EXPECT_THROW(m_driver->SendIOCTL(IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT, &buf, sizeof(buf), nullptr, size), std::exception);
-    EXPECT_EQ(CryptoDevice_NoError, GetDeviceError());
+    EXPECT_NE(CryptoDevice_NoError, GetDeviceError());
 }
 
 TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT_OutBadAddr)
@@ -472,5 +472,5 @@ TEST_F(CryptoDevice_Ioctl, IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT_OutZeroSize)
 
     size_t size = 0;
     EXPECT_THROW(m_driver->SendIOCTL(IOCTL_CRYPTO_DEVICE_AES_CBC_DECRYPT, &buf, sizeof(buf), nullptr, size), std::exception);
-    EXPECT_EQ(CryptoDevice_NoError, GetDeviceError());
+    EXPECT_NE(CryptoDevice_NoError, GetDeviceError());
 }

@@ -43,8 +43,17 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 [CryptoDevice_Device.NT]
 CopyFiles=Drivers_Dir
 
+[Driver_Device.NT.HW]
+AddReg = Driver_Device_MSI
+
 [Drivers_Dir]
 CryptoDevice.sys
+
+[Driver_Device_MSI]
+HKR, Interrupt Management,, 0x00000010
+HKR, Interrupt Management\MessageSignaledInterruptProperties,, 0x00000010
+HKR, Interrupt Management\MessageSignaledInterruptProperties, MSISupported, 0x00010001, 1
+HKR, Interrupt Management\MessageSignaledInterruptProperties, MessageNumberLimit, 0x00010001,4
 
 ;-------------- Service installation
 [CryptoDevice_Device.NT.Services]

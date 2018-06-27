@@ -8,8 +8,8 @@
 
 
 NTSTATUS CryptoDeviceInit(
-    _In_    PVOID          CryptoDeviceIo,
-    _Inout_ PCRYPTO_DEVICE CryptoDevice
+    _Inout_ PCRYPTO_DEVICE CryptoDevice,
+    _In_    PVOID          CryptoDeviceIo
 )
 {
     PAGED_CODE();

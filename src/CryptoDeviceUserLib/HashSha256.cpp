@@ -117,14 +117,14 @@ namespace utils
 
 #define HEX_BYTE($byte) std::hex << std::setfill('0') << std::setw(2) << static_cast<uint16_t>($byte)
 
-        st  << HEX_BYTE(m_hashData[0x00]) << HEX_BYTE(m_hashData[0x01]) << HEX_BYTE(m_hashData[0x02]) << HEX_BYTE(m_hashData[0x03])
-            << HEX_BYTE(m_hashData[0x04]) << HEX_BYTE(m_hashData[0x05]) << HEX_BYTE(m_hashData[0x06]) << HEX_BYTE(m_hashData[0x07]) 
-            << HEX_BYTE(m_hashData[0x08]) << HEX_BYTE(m_hashData[0x09]) << HEX_BYTE(m_hashData[0x0a]) << HEX_BYTE(m_hashData[0x0b])
-            << HEX_BYTE(m_hashData[0x0c]) << HEX_BYTE(m_hashData[0x0d]) << HEX_BYTE(m_hashData[0x0e]) << HEX_BYTE(m_hashData[0x0f])
-            << HEX_BYTE(m_hashData[0x10]) << HEX_BYTE(m_hashData[0x11]) << HEX_BYTE(m_hashData[0x12]) << HEX_BYTE(m_hashData[0x13])
-            << HEX_BYTE(m_hashData[0x14]) << HEX_BYTE(m_hashData[0x15]) << HEX_BYTE(m_hashData[0x16]) << HEX_BYTE(m_hashData[0x17])
-            << HEX_BYTE(m_hashData[0x18]) << HEX_BYTE(m_hashData[0x19]) << HEX_BYTE(m_hashData[0x1a]) << HEX_BYTE(m_hashData[0x1b])
-            << HEX_BYTE(m_hashData[0x1c]) << HEX_BYTE(m_hashData[0x1d]) << HEX_BYTE(m_hashData[0x1e]) << HEX_BYTE(m_hashData[0x1f]);
+        st  << HEX_BYTE(gsl::at(m_hashData, 0x00)) << HEX_BYTE(gsl::at(m_hashData, 0x01)) << HEX_BYTE(gsl::at(m_hashData, 0x02)) << HEX_BYTE(gsl::at(m_hashData, 0x03))
+            << HEX_BYTE(gsl::at(m_hashData, 0x04)) << HEX_BYTE(gsl::at(m_hashData, 0x05)) << HEX_BYTE(gsl::at(m_hashData, 0x06)) << HEX_BYTE(gsl::at(m_hashData, 0x07)) 
+            << HEX_BYTE(gsl::at(m_hashData, 0x08)) << HEX_BYTE(gsl::at(m_hashData, 0x09)) << HEX_BYTE(gsl::at(m_hashData, 0x0a)) << HEX_BYTE(gsl::at(m_hashData, 0x0b))
+            << HEX_BYTE(gsl::at(m_hashData, 0x0c)) << HEX_BYTE(gsl::at(m_hashData, 0x0d)) << HEX_BYTE(gsl::at(m_hashData, 0x0e)) << HEX_BYTE(gsl::at(m_hashData, 0x0f))
+            << HEX_BYTE(gsl::at(m_hashData, 0x10)) << HEX_BYTE(gsl::at(m_hashData, 0x11)) << HEX_BYTE(gsl::at(m_hashData, 0x12)) << HEX_BYTE(gsl::at(m_hashData, 0x13))
+            << HEX_BYTE(gsl::at(m_hashData, 0x14)) << HEX_BYTE(gsl::at(m_hashData, 0x15)) << HEX_BYTE(gsl::at(m_hashData, 0x16)) << HEX_BYTE(gsl::at(m_hashData, 0x17))
+            << HEX_BYTE(gsl::at(m_hashData, 0x18)) << HEX_BYTE(gsl::at(m_hashData, 0x19)) << HEX_BYTE(gsl::at(m_hashData, 0x1a)) << HEX_BYTE(gsl::at(m_hashData, 0x1b))
+            << HEX_BYTE(gsl::at(m_hashData, 0x1c)) << HEX_BYTE(gsl::at(m_hashData, 0x1d)) << HEX_BYTE(gsl::at(m_hashData, 0x1e)) << HEX_BYTE(gsl::at(m_hashData, 0x1f));
 
 #undef HEX_BYTE
     }

@@ -65,10 +65,10 @@ TEST_F(CryptoDevice_Sha256, NullBuffer)
 {
     crypto::CryptoDeviceCtrl::Sha256Buffer hash = {};
 
-    EXPECT_THROW(m_driver->Sha256(nullptr, 0, hash), std::exception);
+    EXPECT_NO_THROW(m_driver->Sha256(nullptr, 0, hash));
     EXPECT_THROW(m_driver->Sha256(nullptr, 1, hash), std::exception);
 
-    EXPECT_THROW(m_driver->Sha256(nullptr, 0), std::exception);
+    EXPECT_NO_THROW(m_driver->Sha256(nullptr, 0));
     EXPECT_THROW(m_driver->Sha256(nullptr, 1), std::exception);
 }
 

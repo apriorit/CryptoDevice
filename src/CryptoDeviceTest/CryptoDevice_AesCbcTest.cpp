@@ -22,26 +22,58 @@ namespace
 
         void TestEncrypt(const void * in, size_t inSize, void * out, size_t outSize) const
         {
-            EXPECT_TRUE(inSize > outSize);
+            EXPECT_TRUE(inSize <= outSize);
 
             std::vector<uint8_t> inCopy(inSize);
             memcpy(inCopy.data(), in, inSize);
 
             m_driver->AesCbcEncrypt(in, inSize, out, outSize);
-            EXPECT_EQ(0, memcmp(in, inCopy.data(), inSize));
-            EXPECT_NE(0, memcmp(in, out, inSize));
+
+            if (in != out)
+            {
+                //
+                // in data are the same - in buffer was not changed
+                // in and out buffers are not the same - the data were encrypted
+                //
+                EXPECT_EQ(0, memcmp(in, inCopy.data(), inSize));
+                EXPECT_NE(0, memcmp(in, out, inSize));
+            }
+            else
+            {
+                //
+                // out and in buffer are the same buffer
+                // in and out - it's encrypted data
+                //
+                EXPECT_NE(0, memcmp(inCopy.data(), out, inSize));
+            }
         }
 
         void TestDecrypt(const void * in, size_t inSize, void * out, size_t outSize) const
         {
-            EXPECT_TRUE(inSize > outSize);
+            EXPECT_TRUE(inSize <= outSize);
 
             std::vector<uint8_t> inCopy(inSize);
             memcpy(inCopy.data(), in, inSize);
 
             m_driver->AesCbcDecrypt(in, inSize, out, outSize);
-            EXPECT_EQ(0, memcmp(in, inCopy.data(), inSize));
-            EXPECT_NE(0, memcmp(in, out, inSize));
+
+            if (in != out)
+            {
+                //
+                // in data are the same - in buffer was not changed
+                // in and out buffers are not the same - the data were encrypted
+                //
+                EXPECT_EQ(0, memcmp(in, inCopy.data(), inSize));
+                EXPECT_NE(0, memcmp(in, out, inSize));
+            }
+            else
+            {
+                //
+                // out and in buffer are the same buffer
+                // in and out - it's encrypted data
+                //
+                EXPECT_NE(0, memcmp(inCopy.data(), out, inSize));
+            }
         }
 
         void TestBufferAligments(size_t size, size_t sizeToEncrypt, size_t offsetInInBuffer, size_t offsetInOutBuffer, uint8_t initVal)
@@ -79,7 +111,7 @@ namespace
 
             uint8_t * outPageGuard1Start = static_cast<uint8_t*>(outMem.get()) + offsetInOutBuffer;
             uint8_t * outBufferStart = outPageGuard1Start + m_onePageSize;
-            uint8_t * outPageGuard2Start = outBufferStart + sizeOfEncrypted;
+            const uint8_t * outPageGuard2Start = outBufferStart + sizeOfEncrypted;
 
             memset(outMem.get(), guarededPagesByte, totalSize);
 
@@ -131,6 +163,7 @@ TEST_F(CryptoDevice_AesCbc, EncryptArgs)
     EXPECT_THROW(m_driver->AesCbcEncrypt(nullptr, 1, nullptr, 1), std::exception);
     EXPECT_THROW(m_driver->AesCbcEncrypt(&dummy, 1, nullptr, 1), std::exception);
     EXPECT_THROW(m_driver->AesCbcEncrypt(nullptr, 1, &dummy, 1), std::exception);
+    m_driver->ResetDevice();
 }
 
 TEST_F(CryptoDevice_AesCbc, DecryptArgs)
@@ -144,6 +177,7 @@ TEST_F(CryptoDevice_AesCbc, DecryptArgs)
     EXPECT_THROW(m_driver->AesCbcDecrypt(nullptr, 1, nullptr, 1), std::exception);
     EXPECT_THROW(m_driver->AesCbcDecrypt(&dummy, 1, nullptr, 1), std::exception);
     EXPECT_THROW(m_driver->AesCbcDecrypt(nullptr, 1, &dummy, 1), std::exception);
+    m_driver->ResetDevice();
 }
 
 TEST_F(CryptoDevice_AesCbc, EncryptDecrypt)
@@ -205,11 +239,11 @@ TEST_F(CryptoDevice_AesCbc, EncryptBadOutBufferLength)
     std::vector<uint8_t> in(100, 0);
     std::vector<uint8_t> out(in.size() - 1);
 
-    EXPECT_THROW(TestEncrypt(in.data(), in.size(), out.data(), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcEncrypt(in.data(), in.size(), out.data(), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_DmaError, m_driver->GetDeviceStatus().ErrorCode);
     m_driver->ResetDevice();
 
-    EXPECT_THROW(TestEncrypt(in.data(), in.size(), out.data(), 0), std::exception);
+    EXPECT_THROW(m_driver->AesCbcEncrypt(in.data(), in.size(), out.data(), 0), std::exception);
     EXPECT_EQ(CryptoDevice_DmaError, m_driver->GetDeviceStatus().ErrorCode);
     m_driver->ResetDevice();
 }
@@ -219,11 +253,11 @@ TEST_F(CryptoDevice_AesCbc, DecryptBadOutBufferLength)
     std::vector<uint8_t> in(100, 0);
     std::vector<uint8_t> out(in.size() - 1);
 
-    EXPECT_THROW(TestDecrypt(in.data(), in.size(), out.data(), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcDecrypt(in.data(), in.size(), out.data(), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_DmaError, m_driver->GetDeviceStatus().ErrorCode);
     m_driver->ResetDevice();
 
-    EXPECT_THROW(TestDecrypt(in.data(), in.size(), out.data(), 0), std::exception);
+    EXPECT_THROW(m_driver->AesCbcDecrypt(in.data(), in.size(), out.data(), 0), std::exception);
     EXPECT_EQ(CryptoDevice_DmaError, m_driver->GetDeviceStatus().ErrorCode);
     m_driver->ResetDevice();
 }
@@ -233,10 +267,10 @@ TEST_F(CryptoDevice_AesCbc, EncryptBadAddress)
     std::vector<uint8_t> in(100, 0);
     std::vector<uint8_t> out(in.size());
 
-    EXPECT_THROW(TestEncrypt(reinterpret_cast<PVOID>(1), in.size(), out.data(), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcEncrypt(reinterpret_cast<PVOID>(1), in.size(), out.data(), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_NoError, m_driver->GetDeviceStatus().ErrorCode);
 
-    EXPECT_THROW(TestEncrypt(in.data(), in.size(), reinterpret_cast<PVOID>(1), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcEncrypt(in.data(), in.size(), reinterpret_cast<PVOID>(1), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_NoError, m_driver->GetDeviceStatus().ErrorCode);
 }
 
@@ -245,10 +279,10 @@ TEST_F(CryptoDevice_AesCbc, DecryptBadAddress)
     std::vector<uint8_t> in(100, 0);
     std::vector<uint8_t> out(in.size());
 
-    EXPECT_THROW(TestDecrypt(reinterpret_cast<PVOID>(1), in.size(), out.data(), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcDecrypt(reinterpret_cast<PVOID>(1), in.size(), out.data(), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_NoError, m_driver->GetDeviceStatus().ErrorCode);
 
-    EXPECT_THROW(TestDecrypt(in.data(), in.size(), reinterpret_cast<PVOID>(1), out.size()), std::exception);
+    EXPECT_THROW(m_driver->AesCbcDecrypt(in.data(), in.size(), reinterpret_cast<PVOID>(1), out.size()), std::exception);
     EXPECT_EQ(CryptoDevice_NoError, m_driver->GetDeviceStatus().ErrorCode);
 }
 
