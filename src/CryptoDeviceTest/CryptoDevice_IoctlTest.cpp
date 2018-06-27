@@ -8,7 +8,7 @@ namespace
     class CryptoDevice_Ioctl : public ::testing::Test
     {
     protected:
-        void SetUp() override
+        CryptoDevice_Ioctl()
         {
             auto devices = crypto::CryptoDeviceCtrl::GetDevicesIds();
             m_driver.reset(new utils::DriverCtrl(devices.at(0)));

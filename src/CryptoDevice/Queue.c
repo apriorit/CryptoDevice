@@ -90,12 +90,12 @@ static NTSTATUS CheckUserBuffer(PVOID Address, ULONG Lenght)
 {
     PVOID end = (PCHAR)Address + Lenght;
 
-    if (!Address || 0 == Lenght)
+    if (!Address && 0 != Lenght)
     {
         return STATUS_INVALID_USER_BUFFER;
     }
 
-    if (Address >= end)
+    if (Address >= end && 0 != Lenght)
     {
         return STATUS_INVALID_USER_BUFFER;
     }

@@ -84,12 +84,12 @@ namespace crypto
     {
         const size_t tail = inBufferSize % AesBlockSize;
 
-        if (0 == tail)
+        if (0 != tail)
         {
-            return inBufferSize;
+            inBufferSize += (AesBlockSize - tail);
         }
 
-        return inBufferSize + (AesBlockSize - tail);
+        return inBufferSize;
     }
 
     void CryptoDeviceCtrl::AesCbcImpl(const void * bufferIn, size_t bufferInSize, void * bufferOut, size_t bufferOutSize, DWORD ioctl) const

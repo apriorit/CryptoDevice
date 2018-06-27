@@ -6,7 +6,7 @@ namespace
     class CryptoDevice_AesCbc : public ::testing::Test
     {
     protected:
-        void SetUp() override
+        CryptoDevice_AesCbc()
         {
             auto devices = crypto::CryptoDeviceCtrl::GetDevicesIds();
             m_driver.reset(new crypto::CryptoDeviceCtrl(devices.at(0)));

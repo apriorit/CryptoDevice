@@ -7,7 +7,6 @@ namespace utils
     class MappedFile
     {
     public:
-        MappedFile();
         MappedFile(LPCWSTR fileName,
                     DWORD desiredAccess,
                     DWORD creationDisposition,

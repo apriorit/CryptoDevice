@@ -7,7 +7,7 @@ namespace
     class CryptoDevice_Sha256 : public ::testing::Test
     {
     protected:
-        void SetUp() override
+        CryptoDevice_Sha256()
         {
             auto devices = crypto::CryptoDeviceCtrl::GetDevicesIds();
             m_driver.reset(new crypto::CryptoDeviceCtrl(devices.at(0)));
@@ -88,11 +88,11 @@ TEST_F(CryptoDevice_Sha256, HashSize)
     const std::array<uint8_t, 1> data { 0 };
 
     auto hash1 = m_driver->Sha256(data.data(), 1);
-    EXPECT_EQ(64, hash1.size());
+    EXPECT_EQ(32, hash1.size());
 
     crypto::CryptoDeviceCtrl::Sha256Buffer hash2 = {};
-    EXPECT_EQ(64, hash2.size());
-    EXPECT_EQ(64, crypto::CryptoDeviceCtrl::Sha256Size);
+    EXPECT_EQ(32, hash2.size());
+    EXPECT_EQ(32, crypto::CryptoDeviceCtrl::Sha256Size);
 }
 
 TEST_F(CryptoDevice_Sha256, Basic)

@@ -6,7 +6,6 @@
 
 #pragma pack(push, 1) // all data must be aligned by 1 byte
 
-#define CRYPTO_DEVICE_DMA_MAGIC_BYTE 0x11
 #define CRYPTO_DEVICE_PAGE_MASK 0xFFF
 #define CRYPTO_DEVICE_PAGE_SIZE 0x1000
 #define CRYPTO_DEVICE_PAGE_SHIFT 0x0C

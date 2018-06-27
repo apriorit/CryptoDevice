@@ -9,7 +9,7 @@ namespace crypto
     {
     public:
         static constexpr size_t AesBlockSize = 16;
-        static constexpr size_t Sha256Size = 64;
+        static constexpr size_t Sha256Size = 32;
         using Sha256Buffer = std::array<uint8_t, Sha256Size>;
 
     public:

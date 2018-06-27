@@ -84,12 +84,14 @@ NTSTATUS MemCreateDmaForUserBuffer(
         return STATUS_NO_MEMORY;
     }
 
+    static_assert(sizeof(PPFN_NUMBER) == sizeof(ULONG64), "Unexpected size of PPFN_NUMBER");
+
     PPFN_NUMBER pfn = MmGetMdlPfnArray(userMdl);
-    kernelVa[0] = pfn[0] + MmGetMdlByteOffset(userMdl);
+    kernelVa[0] = (pfn[0] << PAGE_SHIFT) + MmGetMdlByteOffset(userMdl);
 
     for (ULONG i = 1; i < countOfPages; ++i)
     {
-        kernelVa[i] = pfn[i];
+        kernelVa[i] = pfn[i] << PAGE_SHIFT;
     }
 
     phys = MmGetPhysicalAddress(kernelVa);

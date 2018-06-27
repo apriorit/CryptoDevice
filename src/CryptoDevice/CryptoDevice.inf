@@ -38,7 +38,7 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%CryptoDevice.DeviceDesc%=CryptoDevice_Device, Root\CryptoDevice ; TODO: edit hw-id
+%CryptoDevice.DeviceDesc%=CryptoDevice_Device,PCI\VEN_1111&DEV_2222
 
 [CryptoDevice_Device.NT]
 CopyFiles=Drivers_Dir

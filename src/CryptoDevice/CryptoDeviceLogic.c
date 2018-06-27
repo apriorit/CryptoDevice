@@ -59,17 +59,23 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
     DMA_USER_MEMORY bufferOut = { 0 };
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
-        UserBufferIn,
-        UserBufferInSize,
-        IoReadAccess,
-        &bufferIn));
+    if (0 != UserBufferInSize)
+    {
+        NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
+            UserBufferIn,
+            UserBufferInSize,
+            IoReadAccess,
+            &bufferIn));
+    }
 
-    NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
-        UserBufferOut,
-        UserBufferOutSize,
-        IoWriteAccess,
-        &bufferOut));
+    if (0 != UserBufferOutSize)
+    {
+        NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
+            UserBufferOut,
+            UserBufferOutSize,
+            IoWriteAccess,
+            &bufferOut));
+    }
 
     WdfWaitLockAcquire(Device->IoLock, NULL);
 

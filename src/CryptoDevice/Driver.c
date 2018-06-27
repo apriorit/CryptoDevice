@@ -56,6 +56,8 @@ Return Value:
     NTSTATUS status;
     WDF_OBJECT_ATTRIBUTES attributes;
 
+    KdBreakPoint();
+
     //
     // Initialize WPP Tracing
     //

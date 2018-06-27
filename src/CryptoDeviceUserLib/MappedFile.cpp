@@ -3,11 +3,6 @@
 
 namespace utils
 {
-    MappedFile::MappedFile()
-        : m_viewSize(0)
-    {
-    }
-
     MappedFile::MappedFile(LPCWSTR fileName, 
         DWORD desiredAccess, 
         DWORD creationDisposition, 
