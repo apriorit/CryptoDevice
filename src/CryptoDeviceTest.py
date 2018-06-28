@@ -30,6 +30,12 @@ def run_test(command):
     print("    >> " + "\n    >> ".join(output), "\n\n")
     return output
 
+def find_string(lines, pattern):
+    for line in lines:
+        if line.startswith(pattern):
+            return True
+    raise ValueError("Cannot find [" + pattern + "]")
+
 def create_test_file():
     with open(TEST_FILE, "w") as file:
         for _ in range(TEST_FILE_LINE_COUNT):
@@ -53,7 +59,8 @@ def check_sha256():
             
 def check_aes_cbc():
     cmd_encrypt = "(echo encrypt " + TEST_FILE + " & echo exit) | " + TEST_EXE
-    run_test(cmd_encrypt)
+    output = run_test(cmd_encrypt)
+    find_string(output, "File '{} ' encrypted".format(TEST_FILE))
     
     hashfile_encrypted = sha256(TEST_FILE)
     print("Sha2 before:", TEST_FILE_HASH)
@@ -65,7 +72,8 @@ def check_aes_cbc():
     # input("Press Enter to encrypt the file...")
     
     cmd_decrypt = "(echo decrypt " + TEST_FILE + " & echo exit) | " + TEST_EXE
-    run_test(cmd_decrypt)
+    output = run_test(cmd_decrypt)
+    find_string(output, "File '{0} ' decrypted".format(TEST_FILE))
     
     hashfile_decrypted = sha256(TEST_FILE)
     print("Sha2 orig  :", TEST_FILE_HASH)
@@ -75,19 +83,24 @@ def check_aes_cbc():
         
 def check_reset():
     cmd = "(echo reset & echo exit) | " + TEST_EXE
-    run_test(cmd)
+    output = run_test(cmd)
+    find_string(output, "> Reset done")
     
 def check_status():
     cmd = "(echo status & echo exit) | " + TEST_EXE
-    run_test(cmd)
+    output = run_test(cmd)
+    find_string(output, "> State:")
+    find_string(output, "Error:")
     
 def check_devices():
     cmd = "(echo devices & echo exit) | " + TEST_EXE
-    run_test(cmd)
+    output = run_test(cmd)
+    find_string(output, r"> \\?\PCI#VEN_1111&DEV_2222&")
     
 def check_unittests():
     cmd = TEST_EXE + " --unit_tests " 
-    run_test(cmd)
+    output = run_test(cmd)
+    find_string(output, "[  PASSED  ] 58 tests.")
 
 class Tee(object):
     def __init__(self, std, name):
