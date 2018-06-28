@@ -70,12 +70,17 @@ static void raise_interrupt(PCICryptoState * dev, CryptoDeviceMSI msi)
         //
         // MSI is enabled
         //
-        if (CryptoDevice_MsiMax >= msi_nr_vectors_allocated(&dev->parent_obj))
+        if (CryptoDevice_MsiMax != msi_nr_vectors_allocated(&dev->parent_obj))
         {
+            PRINT("Send MSI 0 (origin msi =%u), allocated msi %u\n"
+                , msi
+                , msi_nr_vectors_allocated(&dev->parent_obj));
             msi = CryptoDevice_MsiZero;
         }
-
-        PRINT("Send MSI %u\n", msi);
+        else
+        {
+            PRINT("Send MSI %u\n", msi);
+        }
         msi_notify(&dev->parent_obj, msi);
     }
     else

@@ -72,6 +72,7 @@ BOOLEAN CryptoDeviceEvtInterruptIsr(
 
     case CryptoDevice_MsiError:
     case CryptoDevice_MsiReady:
+    case CryptoDevice_MsiReset:
         interruptContext->Msi.Flags[MessageID] = TRUE;
         break;
     }

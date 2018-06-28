@@ -36,10 +36,10 @@ index 10c88a84b4..c9b3708b1b 100644
  common-obj-y += unimp.o
  common-obj-$(CONFIG_FW_CFG_DMA) += vmcoreinfo.o
 diff --git a/hw/misc/crypto.c b/hw/misc/crypto.c
-index e69de29bb2..c0bb0bf08e 100644
+index e69de29bb2..4e5f2e26bb 100644
 --- a/hw/misc/crypto.c
 +++ b/hw/misc/crypto.c
-@@ -0,0 +1,721 @@
+@@ -0,0 +1,726 @@
 +#include <assert.h>
 +#include <openssl/sha.h>
 +#include <openssl/aes.h>
@@ -112,12 +112,17 @@ index e69de29bb2..c0bb0bf08e 100644
 +        //
 +        // MSI is enabled
 +        //
-+        if (CryptoDevice_MsiMax >= msi_nr_vectors_allocated(&dev->parent_obj))
++        if (CryptoDevice_MsiMax != msi_nr_vectors_allocated(&dev->parent_obj))
 +        {
++            PRINT("Send MSI 0 (origin msi =%u), allocated msi %u\n"
++                , msi
++                , msi_nr_vectors_allocated(&dev->parent_obj));
 +            msi = CryptoDevice_MsiZero;
 +        }
-+
-+        PRINT("Send MSI %u\n", msi);
++        else
++        {
++            PRINT("Send MSI %u\n", msi);
++        }
 +        msi_notify(&dev->parent_obj, msi);
 +    }
 +    else
