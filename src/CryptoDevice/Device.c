@@ -194,7 +194,6 @@ NTSTATUS CryptoDeviceEvtDevicePrepareHardware(
             {
                 TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Legacy Interrupt mode\n");
 
-                //TODO: check
                 ctx->InterruptCount = 1;
                 NT_CHECK(CryptoDeviceInterruptCreate(Device, descriptor, raw, &ctx->Interrupt[0]));
             }
@@ -221,7 +220,6 @@ NTSTATUS CryptoDeviceEvtDevicePrepareHardware(
         return STATUS_DEVICE_CONFIGURATION_ERROR;
     }
 
-    // TODO : check error case and resources
     NT_CHECK(CryptoDeviceInit(&ctx->CryptoDevice, ctx->IoMemoryBar0.Memory));
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");

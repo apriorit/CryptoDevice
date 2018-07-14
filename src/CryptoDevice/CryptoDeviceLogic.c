@@ -66,6 +66,8 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
             UserBufferInSize,
             IoReadAccess,
             &bufferIn));
+
+        KeFlushIoBuffers(bufferIn.UserBufferMdl, FALSE, TRUE);
     }
 
     if (0 != UserBufferOutSize)
@@ -99,6 +101,11 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
 
     NT_CHECK_GOTO_CLEAN(status);
     NT_CHECK_GOTO_CLEAN(CryptoDeviceWaitForReadyOrError(Device, NULL));
+
+    if (bufferOut.UserBufferMdl)
+    {
+        KeFlushIoBuffers(bufferOut.UserBufferMdl, TRUE, TRUE);
+    }
 
 clean:
     InterlockedDecrement(&Device->DeviceBusy);
