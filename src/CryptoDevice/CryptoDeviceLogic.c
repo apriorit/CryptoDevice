@@ -64,10 +64,9 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
         NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
             UserBufferIn,
             UserBufferInSize,
-            IoReadAccess,
+            Device->DmaEnabler,
+            FALSE,
             &bufferIn));
-
-        KeFlushIoBuffers(bufferIn.UserBufferMdl, FALSE, TRUE);
     }
 
     if (0 != UserBufferOutSize)
@@ -75,7 +74,8 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
         NT_CHECK_GOTO_CLEAN(MemCreateDmaForUserBuffer(
             UserBufferOut,
             UserBufferOutSize,
-            IoWriteAccess,
+            Device->DmaEnabler,
+            TRUE,
             &bufferOut));
     }
 
@@ -102,13 +102,32 @@ static NTSTATUS CryptoDeviceCommandRequestInOut(
     NT_CHECK_GOTO_CLEAN(status);
     NT_CHECK_GOTO_CLEAN(CryptoDeviceWaitForReadyOrError(Device, NULL));
 
-    if (bufferOut.UserBufferMdl)
+    if (bufferIn.DmaTransaction)
     {
-        KeFlushIoBuffers(bufferOut.UserBufferMdl, TRUE, TRUE);
+        NTSTATUS dummy = STATUS_UNSUCCESSFUL;
+        (VOID)WdfDmaTransactionDmaCompleted(bufferIn.DmaTransaction, &dummy);
+    }
+    if (bufferOut.DmaTransaction)
+    {
+        NTSTATUS dummy = STATUS_UNSUCCESSFUL;
+        (VOID)WdfDmaTransactionDmaCompleted(bufferOut.DmaTransaction, &dummy);
     }
 
 clean:
     InterlockedDecrement(&Device->DeviceBusy);
+    
+    if (!NT_SUCCESS(status))
+    {
+        if (bufferIn.DmaTransaction)
+        {
+            (VOID)WdfDmaTransactionDmaCompletedFinal(bufferIn.DmaTransaction, 0, &status);
+        }
+        if (bufferOut.DmaTransaction)
+        {
+            (VOID)WdfDmaTransactionDmaCompletedFinal(bufferOut.DmaTransaction, 0, &status);
+        }
+    }
+
     MemFreeDma(&bufferIn);
     MemFreeDma(&bufferOut);
     return status;

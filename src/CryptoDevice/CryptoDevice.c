@@ -6,21 +6,17 @@
 #pragma alloc_text (PAGE, CryptoDeviceWaitReset)
 #endif
 
-
 NTSTATUS CryptoDeviceInit(
     _Inout_ PCRYPTO_DEVICE CryptoDevice,
-    _In_    PVOID          CryptoDeviceIo
+    _In_    WDFDEVICE      Device
 )
 {
     PAGED_CODE();
-    
-    ASSERT(CryptoDeviceIo);
-    ASSERT(!CryptoDevice->Io);
 
     NT_CHECK(WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &CryptoDevice->IoLock));
     NT_CHECK(WdfWaitLockCreate(WDF_NO_OBJECT_ATTRIBUTES, &CryptoDevice->ResetLock));
-    
-    CryptoDevice->Io = CryptoDeviceIo;
+
+    CryptoDevice->Io = NULL;
     CryptoDevice->DeviceBusy = 0;
 
     KeInitializeEvent(&CryptoDevice->ErrorEvent, NotificationEvent, FALSE);
@@ -28,10 +24,42 @@ NTSTATUS CryptoDeviceInit(
     KeInitializeEvent(&CryptoDevice->ResetEvent, NotificationEvent, FALSE);
     KeInitializeEvent(&CryptoDevice->CancelEvent, NotificationEvent, FALSE);
 
+    //
+    // DMA configurations
+    //
+    WdfDeviceSetAlignmentRequirement(Device, FILE_BYTE_ALIGNMENT);
+
+    WDF_DMA_ENABLER_CONFIG dmaConfig;
+    WDF_DMA_ENABLER_CONFIG_INIT(&dmaConfig, WdfDmaProfileScatterGather64Duplex, MAXSIZE_T);
+    dmaConfig.WdmDmaVersionOverride = 3;
+    dmaConfig.Flags = WDF_DMA_ENABLER_CONFIG_REQUIRE_SINGLE_TRANSFER;
+
+    NT_CHECK(WdfDmaEnablerCreate(Device,
+        &dmaConfig,
+        WDF_NO_OBJECT_ATTRIBUTES,
+        &CryptoDevice->DmaEnabler));
+
     return STATUS_SUCCESS;
 }
 
 VOID CryptoDeviceRelease(
+    _Inout_ PCRYPTO_DEVICE Device
+)
+{
+    UNREFERENCED_PARAMETER(Device);
+}
+
+VOID CryptoDeviceInitIo(
+    _Inout_ PCRYPTO_DEVICE CryptoDevice,
+    _In_    PVOID          CryptoDeviceIo
+)
+{
+    ASSERT(CryptoDeviceIo);
+    ASSERT(!CryptoDevice->Io);
+    CryptoDevice->Io = CryptoDeviceIo;
+}
+
+VOID CryptoDeviceReleaseIo(
     _Inout_ PCRYPTO_DEVICE Device
 )
 {

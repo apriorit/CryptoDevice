@@ -8,11 +8,14 @@ EXTERN_C_START
 typedef struct _DMA_USER_MEMORY
 {
     PMDL UserBufferMdl;
-    PVOID KernelContigVa;
 
     ULONG32 DmaAddress;
     ULONG32 DmaCountOfPages;
-    
+    ULONG32 DmaBufferSize;
+
+    WDFCOMMONBUFFER DmaBuffer;
+    WDFDMATRANSACTION DmaTransaction;
+
 } DMA_USER_MEMORY, *PDMA_USER_MEMORY;
 
 NTSTATUS MemCreateUserBufferMdl(
@@ -29,7 +32,8 @@ VOID MemFreeUserBufferMdl(
 NTSTATUS MemCreateDmaForUserBuffer(
     _In_ PVOID UserBuffer,
     _In_ ULONG UserBufferSize,
-    _In_ LOCK_OPERATION Operation,
+    _In_ WDFDMAENABLER DmaEnabler,
+    _In_ BOOLEAN WriteToDevice,
     _Out_ PDMA_USER_MEMORY Dma
 );
 

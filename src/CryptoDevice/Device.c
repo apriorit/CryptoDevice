@@ -85,6 +85,7 @@ Return Value:
     NT_CHECK(WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device));
 
     PDEVICE_CONTEXT ctx = DeviceGetContext(device);
+    NT_CHECK(CryptoDeviceInit(&ctx->CryptoDevice, device));
 
     WDF_OBJECT_ATTRIBUTES spinlockAttributes;
     WDF_OBJECT_ATTRIBUTES_INIT(&spinlockAttributes);
@@ -220,7 +221,7 @@ NTSTATUS CryptoDeviceEvtDevicePrepareHardware(
         return STATUS_DEVICE_CONFIGURATION_ERROR;
     }
 
-    NT_CHECK(CryptoDeviceInit(&ctx->CryptoDevice, ctx->IoMemoryBar0.Memory));
+    CryptoDeviceInitIo(&ctx->CryptoDevice, ctx->IoMemoryBar0.Memory);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Exit");
     return STATUS_SUCCESS;
@@ -238,7 +239,7 @@ NTSTATUS CryptoDeviceEvtDeviceReleaseHardware(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DEVICE, "%!FUNC! Entry");
 
     PDEVICE_CONTEXT ctx = DeviceGetContext(Device);
-    CryptoDeviceRelease(&ctx->CryptoDevice);
+    CryptoDeviceReleaseIo(&ctx->CryptoDevice);
 
     if (ctx->IoMemoryBar0.Memory)
     {

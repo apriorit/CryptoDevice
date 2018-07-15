@@ -16,6 +16,8 @@ typedef struct _CRYPTO_DEVICE
     WDFWAITLOCK IoLock;
     WDFWAITLOCK ResetLock;
 
+    WDFDMAENABLER DmaEnabler;
+
     KEVENT ErrorEvent;
     KEVENT ReadyEvent;
     KEVENT ResetEvent;
@@ -27,10 +29,19 @@ typedef struct _CRYPTO_DEVICE
 
 NTSTATUS CryptoDeviceInit(
     _Inout_ PCRYPTO_DEVICE CryptoDevice,
-    _In_    PVOID          CryptoDeviceIo
+    _In_    WDFDEVICE      Device
 );
 
 VOID CryptoDeviceRelease(
+    _Inout_ PCRYPTO_DEVICE Device
+);
+
+VOID CryptoDeviceInitIo(
+    _Inout_ PCRYPTO_DEVICE CryptoDevice,
+    _In_    PVOID          CryptoDeviceIo
+);
+
+VOID CryptoDeviceReleaseIo(
     _Inout_ PCRYPTO_DEVICE Device
 );
 
