@@ -135,7 +135,7 @@ NTSTATUS MemCreateDmaForUserBuffer(
     //
     // Create MDL and validate the memory range
     //
-    LOCK_OPERATION op = WriteToDevice ? IoWriteAccess : IoReadAccess;
+    LOCK_OPERATION op = WriteToDevice ? IoReadAccess : IoWriteAccess;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
     NT_CHECK_GOTO_CLEAN(MemCreateUserBufferMdl(UserBuffer, UserBufferSize, op, &Dma->UserBufferMdl));
 
@@ -162,7 +162,7 @@ NTSTATUS MemCreateDmaForUserBuffer(
 
     if (0 != (dmaBufPa.QuadPart & CRYPTO_DEVICE_PAGE_MASK))
     {
-        goto clean;
+        NT_CHECK_GOTO_CLEAN(STATUS_UNSUCCESSFUL);
     }
 
     //
@@ -181,7 +181,7 @@ NTSTATUS MemCreateDmaForUserBuffer(
 
     if (0 == length)
     {
-        goto clean;
+        NT_CHECK_GOTO_CLEAN(STATUS_UNSUCCESSFUL);
     }
 
     WDF_DMA_DIRECTION dmaDirection = WriteToDevice ? WdfDmaDirectionWriteToDevice : WdfDmaDirectionReadFromDevice;

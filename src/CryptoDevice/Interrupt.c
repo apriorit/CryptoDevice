@@ -73,11 +73,12 @@ BOOLEAN CryptoDeviceEvtInterruptIsr(
     case CryptoDevice_MsiError:
     case CryptoDevice_MsiReady:
     case CryptoDevice_MsiReset:
+        ASSERT(MessageID < ARRAYSIZE(interruptContext->Msi.Flags));
         interruptContext->Msi.Flags[MessageID] = TRUE;
         break;
     }
 
-    WdfInterruptQueueWorkItemForIsr(Interrupt);
+    WdfInterruptQueueDpcForIsr(Interrupt);
     return TRUE;
 }
 
