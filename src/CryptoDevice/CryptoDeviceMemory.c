@@ -194,7 +194,7 @@ NTSTATUS MemCreateDmaForUserBuffer(
         length));
 
     //
-    // Fill out contiguouse memory with SG values
+    // Fill out contiguous memory with SG values
     //
     NT_CHECK_GOTO_CLEAN(WdfDmaTransactionExecute(Dma->DmaTransaction, Dma));
 
