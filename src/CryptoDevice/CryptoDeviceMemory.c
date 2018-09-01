@@ -135,7 +135,7 @@ NTSTATUS MemCreateDmaForUserBuffer(
     //
     // Create MDL and validate the memory range
     //
-    LOCK_OPERATION op = WriteToDevice ? IoReadAccess : IoWriteAccess;
+    LOCK_OPERATION op = WriteToDevice ? IoWriteAccess : IoReadAccess;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
     NT_CHECK_GOTO_CLEAN(MemCreateUserBufferMdl(UserBuffer, UserBufferSize, op, &Dma->UserBufferMdl));
 
